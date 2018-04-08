@@ -1513,8 +1513,8 @@ void MainWindow::loadPreferences(bool configureSession)
             if (m_taskbarButton) {
                 m_taskbarButton->clearOverlayIcon();
                 m_taskbarButton->progress()->setVisible(false);
-                m_pause->setVisible(false);
-                m_resume->setVisible(false);
+                m_thumbBar->clear();
+                delete m_thumbBar;
                 delete m_taskbarButton;
             }
         }
