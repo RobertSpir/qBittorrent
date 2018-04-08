@@ -409,7 +409,7 @@
                   <item>
                    <widget class="QCheckBox" name="checkCloseToSystray">
                     <property name="text">
-                     <string comment="i.e: The systray tray icon will still be visible when closing the main window.">Close qBittorrent to notification area</string>
+                     <string comment="i.e: The systray tray icon will still be visible when closing the main window.">Minimize qBittorent instead of close</string>
                     </property>
                    </widget>
                   </item>

@@ -60,7 +60,7 @@ class DeletionConfirmationDlg : public QDialog, private Ui::confirmDeletionDlg {
 
     checkPermDelete->setChecked(defaultDeleteFiles || Preferences::instance()->deleteTorrentFilesAsDefault());
     connect(checkPermDelete, SIGNAL(clicked()), this, SLOT(updateRememberButtonState()));
-    buttonBox->button(QDialogButtonBox::Cancel)->setFocus();
+    buttonBox->button(QDialogButtonBox::Ok)->setFocus();
 
     Utils::Gui::resize(this);
   }

@@ -40,7 +40,8 @@
 #include "base/utils/fs.h"
 #include "torrentmodel.h"
 
-static QColor getColorByState(BitTorrent::TorrentState state);
+
+static QColor getColorByState(BitTorrent::TorrentState state, qreal ratio);
 
 static QIcon getPausedIcon();
 static QIcon getQueuedIcon();
@@ -168,7 +169,7 @@ QVariant TorrentModel::data(const QModelIndex &index, int role) const
         return getIconByState(torrent->state());
 
     if (role == Qt::ForegroundRole)
-        return getColorByState(torrent->state());
+        return getColorByState(torrent->state(), torrent->realRatio());
 
     if ((role != Qt::DisplayRole) && (role != Qt::UserRole))
         return QVariant();
@@ -332,6 +333,7 @@ QIcon TorrentModel::getIconByState(BitTorrent::TorrentState state)
     case BitTorrent::TorrentState::StalledUploading:
         return getStalledUploadingIcon();
     case BitTorrent::TorrentState::Uploading:
+    case BitTorrent::TorrentState::UploadingGoodRatio:
     case BitTorrent::TorrentState::ForcedUploading:
         return getUploadingIcon();
     case BitTorrent::TorrentState::PausedDownloading:
@@ -358,7 +360,7 @@ QIcon TorrentModel::getIconByState(BitTorrent::TorrentState state)
     }
 }
 
-QColor getColorByState(BitTorrent::TorrentState state)
+QColor getColorByState(BitTorrent::TorrentState state, qreal ratio)
 {
     // Color names taken from http://cloford.com/resources/colours/500col.htm
     bool dark = isDarkTheme();
@@ -368,27 +370,30 @@ QColor getColorByState(BitTorrent::TorrentState state)
     case BitTorrent::TorrentState::ForcedDownloading:
     case BitTorrent::TorrentState::DownloadingMetadata:
         if (!dark)
-            return QColor(34, 139, 34); // Forest Green
+            return QColor(20, 55, 209);
         else
             return QColor(50, 205, 50); // Lime Green
     case BitTorrent::TorrentState::Allocating:
     case BitTorrent::TorrentState::StalledDownloading:
+            return QColor(250, 128, 114); // Salmon
     case BitTorrent::TorrentState::StalledUploading:
         if (!dark)
-            return QColor(0, 0, 0); // Black
+            return QColor(0, 100, 0);
         else
             return QColor(204, 204, 204); // Gray 80
+    case BitTorrent::TorrentState::UploadingGoodRatio:
+        return QColor(153, 0, 153);
     case BitTorrent::TorrentState::Uploading:
     case BitTorrent::TorrentState::ForcedUploading:
         if (!dark)
-            return QColor(65, 105, 225); // Royal Blue
+            return QColor(0, 160, 0);
         else
             return QColor(99, 184, 255); // Steel Blue 1
     case BitTorrent::TorrentState::PausedDownloading:
         return QColor(250, 128, 114); // Salmon
     case BitTorrent::TorrentState::PausedUploading:
         if (!dark)
-            return QColor(0, 0, 139); // Dark Blue
+            return QColor(128, 128, 128); // Dark Blue
         else
             return QColor(79, 148, 205); // Steel Blue 3
     case BitTorrent::TorrentState::Error:

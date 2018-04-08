@@ -1061,7 +1061,7 @@ void MainWindow::toggleVisibility(const QSystemTrayIcon::ActivationReason reason
 {
     switch (reason) {
     case QSystemTrayIcon::Trigger: {
-        if (isHidden()) {
+        if (isHidden() || isMinimized()) {
             if (m_uiLocked && !unlockUI())  // Ask for UI lock password
                 return;
 
@@ -1136,8 +1136,16 @@ void MainWindow::closeEvent(QCloseEvent *e)
 #else
     const bool goToSystrayOnExit = pref->closeToTray();
     if (!m_forceExit && m_systrayIcon && goToSystrayOnExit && !this->isHidden()) {
-        hide();
-        e->accept();
+        if (pref->minimizeToTray())
+        {
+            hide();
+            e->accept();
+        }
+        else
+        {
+            minimizeWindow();
+            e->ignore();
+        }
         return;
     }
 #endif
@@ -2154,6 +2162,7 @@ void MainWindow::updateTaskbar(BitTorrent::TorrentHandle* torrent)
             m_taskbarButton->progress()->setVisible(false);
             break;
         case BitTorrent::TorrentState::Uploading:
+        case BitTorrent::TorrentState::UploadingGoodRatio:
         case BitTorrent::TorrentState::ForcedUploading:
             m_taskbarButton->progress()->setVisible(false);
             break;
