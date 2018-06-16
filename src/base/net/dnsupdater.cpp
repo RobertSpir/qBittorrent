@@ -26,15 +26,16 @@
  * exception statement from your version.
  */
 
+#include "dnsupdater.h"
+
 #include <QDebug>
-#include <QRegExp>
+#include <QRegularExpression>
 #include <QStringList>
 #include <QUrlQuery>
 
 #include "base/logger.h"
 #include "base/net/downloadhandler.h"
 #include "base/net/downloadmanager.h"
-#include "dnsupdater.h"
 
 using namespace Net;
 
@@ -52,7 +53,7 @@ DNSUpdater::DNSUpdater(QObject *parent)
 
     // Start IP checking timer
     m_ipCheckTimer.setInterval(IP_CHECK_INTERVAL_MS);
-    connect(&m_ipCheckTimer, SIGNAL(timeout()), SLOT(checkPublicIP()));
+    connect(&m_ipCheckTimer, &QTimer::timeout, this, &DNSUpdater::checkPublicIP);
     m_ipCheckTimer.start();
 
     // Check lastUpdate to avoid flooding
@@ -77,8 +78,9 @@ void DNSUpdater::checkPublicIP()
     DownloadHandler *handler = DownloadManager::instance()->downloadUrl(
                 "http://checkip.dyndns.org", false, 0, false,
                 "qBittorrent/" QBT_VERSION_2);
-    connect(handler, SIGNAL(downloadFinished(QString, QByteArray)), SLOT(ipRequestFinished(QString, QByteArray)));
-    connect(handler, SIGNAL(downloadFailed(QString, QString)), SLOT(ipRequestFailed(QString, QString)));
+    connect(handler, static_cast<void (Net::DownloadHandler::*)(const QString &, const QByteArray &)>(&Net::DownloadHandler::downloadFinished)
+            , this, &DNSUpdater::ipRequestFinished);
+    connect(handler, &Net::DownloadHandler::downloadFailed, this, &DNSUpdater::ipRequestFailed);
 
     m_lastIPCheckTime = QDateTime::currentDateTime();
 }
@@ -88,9 +90,9 @@ void DNSUpdater::ipRequestFinished(const QString &url, const QByteArray &data)
     Q_UNUSED(url);
 
     // Parse response
-    QRegExp ipregex("Current IP Address:\\s+([^<]+)</body>");
-    if (ipregex.indexIn(data) >= 0) {
-        QString ipStr = ipregex.cap(1);
+    const QRegularExpressionMatch ipRegexMatch = QRegularExpression("Current IP Address:\\s+([^<]+)</body>").match(data);
+    if (ipRegexMatch.hasMatch()) {
+        QString ipStr = ipRegexMatch.captured(1);
         qDebug() << Q_FUNC_INFO << "Regular expression captured the following IP:" << ipStr;
         QHostAddress newIp(ipStr);
         if (!newIp.isNull()) {
@@ -124,8 +126,9 @@ void DNSUpdater::updateDNSService()
     DownloadHandler *handler = DownloadManager::instance()->downloadUrl(
                 getUpdateUrl(), false, 0, false,
                 "qBittorrent/" QBT_VERSION_2);
-    connect(handler, SIGNAL(downloadFinished(QString, QByteArray)), SLOT(ipUpdateFinished(QString, QByteArray)));
-    connect(handler, SIGNAL(downloadFailed(QString, QString)), SLOT(ipUpdateFailed(QString, QString)));
+    connect(handler, static_cast<void (Net::DownloadHandler::*)(const QString &, const QByteArray &)>(&Net::DownloadHandler::downloadFinished)
+            , this, &DNSUpdater::ipUpdateFinished);
+    connect(handler, &Net::DownloadHandler::downloadFailed, this, &DNSUpdater::ipUpdateFailed);
 }
 
 QString DNSUpdater::getUpdateUrl() const
@@ -244,8 +247,8 @@ void DNSUpdater::updateCredentials()
     }
     if (m_domain != pref->getDynDomainName()) {
         m_domain = pref->getDynDomainName();
-        QRegExp domain_regex("^(?:(?!\\d|-)[a-zA-Z0-9\\-]{1,63}\\.)+[a-zA-Z]{2,}$");
-        if (domain_regex.indexIn(m_domain) < 0) {
+        const QRegularExpressionMatch domainRegexMatch = QRegularExpression("^(?:(?!\\d|-)[a-zA-Z0-9\\-]{1,63}\\.)+[a-zA-Z]{2,}$").match(m_domain);
+        if (!domainRegexMatch.hasMatch()) {
             logger->addMessage(tr("Dynamic DNS error: supplied domain name is invalid."), Log::CRITICAL);
             m_lastIP.clear();
             m_ipCheckTimer.stop();

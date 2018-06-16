@@ -102,9 +102,9 @@ SearchTab::SearchTab(SearchHandler *searchHandler, QWidget *parent)
     m_ui->resultsBrowser->setAllColumnsShowFocus(true);
     m_ui->resultsBrowser->setSortingEnabled(true);
 
-    //Ensure that at least one column is visible at all times
+    // Ensure that at least one column is visible at all times
     bool atLeastOne = false;
-    for (unsigned int i = 0; i < SearchSortModel::DL_LINK; i++) {
+    for (unsigned int i = 0; i < SearchSortModel::DL_LINK; ++i) {
         if (!m_ui->resultsBrowser->isColumnHidden(i)) {
             atLeastOne = true;
             break;
@@ -112,10 +112,10 @@ SearchTab::SearchTab(SearchHandler *searchHandler, QWidget *parent)
     }
     if (!atLeastOne)
         m_ui->resultsBrowser->setColumnHidden(SearchSortModel::NAME, false);
-    //To also mitigate the above issue, we have to resize each column when
-    //its size is 0, because explicitly 'showing' the column isn't enough
-    //in the above scenario.
-    for (unsigned int i = 0; i < SearchSortModel::DL_LINK; i++)
+    // To also mitigate the above issue, we have to resize each column when
+    // its size is 0, because explicitly 'showing' the column isn't enough
+    // in the above scenario.
+    for (unsigned int i = 0; i < SearchSortModel::DL_LINK; ++i)
         if ((m_ui->resultsBrowser->columnWidth(i) <= 0) && !m_ui->resultsBrowser->isColumnHidden(i))
             m_ui->resultsBrowser->resizeColumnToContents(i);
 
@@ -129,23 +129,23 @@ SearchTab::SearchTab(SearchHandler *searchHandler, QWidget *parent)
 
     updateFilter();
 
-    connect(m_ui->filterMode, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged)
+    connect(m_ui->filterMode, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged)
             , this, &SearchTab::updateFilter);
     connect(m_ui->minSeeds, &QAbstractSpinBox::editingFinished, this, &SearchTab::updateFilter);
-    connect(m_ui->minSeeds, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged)
+    connect(m_ui->minSeeds, static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged)
             , this, &SearchTab::updateFilter);
     connect(m_ui->maxSeeds, &QAbstractSpinBox::editingFinished, this, &SearchTab::updateFilter);
-    connect(m_ui->maxSeeds, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged)
+    connect(m_ui->maxSeeds, static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged)
             , this, &SearchTab::updateFilter);
     connect(m_ui->minSize, &QAbstractSpinBox::editingFinished, this, &SearchTab::updateFilter);
-    connect(m_ui->minSize, static_cast<void(QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged)
+    connect(m_ui->minSize, static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged)
             , this, &SearchTab::updateFilter);
     connect(m_ui->maxSize, &QAbstractSpinBox::editingFinished, this, &SearchTab::updateFilter);
-    connect(m_ui->maxSize, static_cast<void(QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged)
+    connect(m_ui->maxSize, static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged)
             , this, &SearchTab::updateFilter);
-    connect(m_ui->minSizeUnit, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged)
+    connect(m_ui->minSizeUnit, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged)
             , this, &SearchTab::updateFilter);
-    connect(m_ui->maxSizeUnit, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged)
+    connect(m_ui->maxSizeUnit, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged)
             , this, &SearchTab::updateFilter);
 
     connect(m_ui->resultsBrowser, &QAbstractItemView::doubleClicked, this, &SearchTab::onItemDoubleClicked);
@@ -229,7 +229,7 @@ void SearchTab::copyTorrentURLs()
 
     if (!urls.empty()) {
         QClipboard *clipboard = QApplication::clipboard();
-        clipboard->setText(urls.join("\n"));
+        clipboard->setText(urls.join('\n'));
     }
 }
 
@@ -327,7 +327,7 @@ void SearchTab::fillFilterComboBoxes()
 
     QVariant selectedMode = static_cast<int>(nameFilteringModeSetting().value());
     int index = m_ui->filterMode->findData(selectedMode);
-    m_ui->filterMode->setCurrentIndex(index == -1 ? 0 : index);
+    m_ui->filterMode->setCurrentIndex((index == -1) ? 0 : index);
 }
 
 QString SearchTab::statusText(SearchTab::Status st)
@@ -375,9 +375,9 @@ void SearchTab::displayToggleColumnsMenu(const QPoint&)
         actions.append(myAct);
     }
     int visibleCols = 0;
-    for (unsigned int i = 0; i < SearchSortModel::DL_LINK; i++) {
+    for (unsigned int i = 0; i < SearchSortModel::DL_LINK; ++i) {
         if (!m_ui->resultsBrowser->isColumnHidden(i))
-            visibleCols++;
+            ++visibleCols;
 
         if (visibleCols > 1)
             break;

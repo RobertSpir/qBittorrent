@@ -1,6 +1,6 @@
 /*
- * Bittorrent Client using Qt4 and libtorrent.
- * Copyright (C) 2006  Christophe Dumez
+ * Bittorrent Client using Qt and libtorrent.
+ * Copyright (C) 2006  Christophe Dumez <chris@qbittorrent.org>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -24,8 +24,6 @@
  * modify file(s), you may extend this exception to your version of the file(s),
  * but you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
- *
- * Contact : chris@qbittorrent.org
  */
 
 #ifndef OPTIONSDLG_H
@@ -57,7 +55,7 @@ namespace Ui
     class OptionsDialog;
 }
 
-class OptionsDialog: public QDialog
+class OptionsDialog : public QDialog
 {
     Q_OBJECT
     using ThisType = OptionsDialog;
@@ -77,7 +75,7 @@ private:
 
 public:
     // Constructor / Destructor
-    OptionsDialog(QWidget *parent = 0);
+    OptionsDialog(QWidget *parent = nullptr);
     ~OptionsDialog();
 
 public slots:
@@ -87,7 +85,7 @@ private slots:
     void enableForceProxy(bool enable);
     void enableProxy(int index);
     void on_buttonBox_accepted();
-    void closeEvent(QCloseEvent *e);
+    void closeEvent(QCloseEvent *e) override;
     void on_buttonBox_rejected();
     void applySettings(QAbstractButton *button);
     void enableApplyButton();
@@ -172,22 +170,20 @@ private:
     bool isWebUiEnabled() const;
     QString webUiUsername() const;
     QString webUiPassword() const;
-
-private:
+    // WebUI SSL Cert / key
     bool setSslKey(const QByteArray &key);
     bool setSslCertificate(const QByteArray &cert);
     bool schedTimesOk();
     bool webUIAuthenticationOk();
 
-private:
+    QByteArray m_sslCert, m_sslKey;
+
     Ui::OptionsDialog *m_ui;
     QButtonGroup choiceLanguage;
     QAbstractButton *applyButton;
     AdvancedSettings *advancedSettings;
     QList<QString> addedScanDirs;
     QList<QString> removedScanDirs;
-    // SSL Cert / key
-    QByteArray m_sslCert, m_sslKey;
 };
 
-#endif
+#endif // OPTIONSDLG_H

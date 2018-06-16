@@ -33,10 +33,10 @@
 #include <QHostAddress>
 #include <QNetworkInterface>
 
-#include "app/application.h"
 #include "base/bittorrent/session.h"
 #include "base/preferences.h"
 #include "base/unicodestrings.h"
+#include "app/application.h"
 #include "gui/addnewtorrentdialog.h"
 #include "gui/mainwindow.h"
 
@@ -115,7 +115,7 @@ AdvancedSettings::AdvancedSettings(QWidget *parent)
 {
     // column
     setColumnCount(COL_COUNT);
-    QStringList header = { tr("Setting"), tr("Value", "Value set for this setting") };
+    QStringList header = {tr("Setting"), tr("Value", "Value set for this setting")};
     setHorizontalHeaderLabels(header);
     // row
     setRowCount(ROW_COUNT);
@@ -125,8 +125,10 @@ AdvancedSettings::AdvancedSettings(QWidget *parent)
     setSelectionMode(QAbstractItemView::NoSelection);
     setEditTriggers(QAbstractItemView::NoEditTriggers);
     // Signals
-    connect(&spin_cache, SIGNAL(valueChanged(int)), SLOT(updateCacheSpinSuffix(int)));
-    connect(&combo_iface, SIGNAL(currentIndexChanged(int)), SLOT(updateInterfaceAddressCombo()));
+    connect(&spin_cache, static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged)
+            , this, &AdvancedSettings::updateCacheSpinSuffix);
+    connect(&combo_iface, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged)
+            , this, &AdvancedSettings::updateInterfaceAddressCombo);
     // Load settings
     loadAdvancedSettings();
     resizeColumnToContents(0);
@@ -135,7 +137,7 @@ AdvancedSettings::AdvancedSettings(QWidget *parent)
 
 void AdvancedSettings::saveAdvancedSettings()
 {
-    Preferences* const pref = Preferences::instance();
+    Preferences *const pref = Preferences::instance();
     BitTorrent::Session *const session = BitTorrent::Session::instance();
 
     // Disk write cache
@@ -199,7 +201,7 @@ void AdvancedSettings::saveAdvancedSettings()
     session->setAnnounceIP(addr.isNull() ? "" : addr.toString());
 
     // Program notification
-    MainWindow * const mainWindow = static_cast<Application*>(QCoreApplication::instance())->mainWindow();
+    MainWindow *const mainWindow = static_cast<Application*>(QCoreApplication::instance())->mainWindow();
     mainWindow->setNotificationsEnabled(cb_program_notifications.isChecked());
     mainWindow->setTorrentAddedNotificationsEnabled(cb_torrent_added_notifications.isChecked());
     // Misc GUI properties
@@ -245,16 +247,16 @@ void AdvancedSettings::updateInterfaceAddressCombo()
     const QString ifaceName = combo_iface.itemData(combo_iface.currentIndex()).toString(); // Empty string for the first element
     const QString currentAddress = BitTorrent::Session::instance()->networkInterfaceAddress();
 
-    //Clear all items and reinsert them, default to all
+    // Clear all items and reinsert them, default to all
     combo_iface_address.clear();
     combo_iface_address.addItem(tr("All addresses"));
     combo_iface_address.setCurrentIndex(0);
 
     auto populateCombo = [this, &currentAddress](const QString &ip, const QAbstractSocket::NetworkLayerProtocol &protocol)
     {
-        Q_ASSERT(protocol == QAbstractSocket::IPv4Protocol || protocol == QAbstractSocket::IPv6Protocol);
-        //Only take ipv4 for now?
-        if (protocol != QAbstractSocket::IPv4Protocol && protocol != QAbstractSocket::IPv6Protocol)
+        Q_ASSERT((protocol == QAbstractSocket::IPv4Protocol) || (protocol == QAbstractSocket::IPv6Protocol));
+        // Only take ipv4 for now?
+        if ((protocol != QAbstractSocket::IPv4Protocol) && (protocol != QAbstractSocket::IPv6Protocol))
             return;
         combo_iface_address.addItem(ip);
         //Try to select the last added one
@@ -278,7 +280,7 @@ void AdvancedSettings::updateInterfaceAddressCombo()
 
 void AdvancedSettings::loadAdvancedSettings()
 {
-    const Preferences* const pref = Preferences::instance();
+    const Preferences *const pref = Preferences::instance();
     const BitTorrent::Session *const session = BitTorrent::Session::instance();
 
     // add section headers
@@ -360,7 +362,7 @@ void AdvancedSettings::loadAdvancedSettings()
     outgoing_ports_max.setValue(session->outgoingPortsMax());
     addRow(OUTGOING_PORT_MAX, tr("Outgoing ports (Max) [0: Disabled]"), &outgoing_ports_max);
     // uTP-TCP mixed mode
-    comboUtpMixedMode.addItems({"Prefer TCP", "Peer proportional (throttles TCP)"});
+    comboUtpMixedMode.addItems({tr("Prefer TCP"), tr("Peer proportional (throttles TCP)")});
     comboUtpMixedMode.setCurrentIndex(static_cast<int>(session->utpMixedMode()));
     addRow(UTP_MIX_MODE, tr("%1-TCP mixed mode algorithm", "uTP-TCP mixed mode algorithm").arg(C_UTP), &comboUtpMixedMode);
     // multiple connections per IP
@@ -447,11 +449,11 @@ void AdvancedSettings::loadAdvancedSettings()
     spin_tracker_port.setValue(pref->getTrackerPort());
     addRow(TRACKER_PORT, tr("Embedded tracker port"), &spin_tracker_port);
     // Choking algorithm
-    comboChokingAlgorithm.addItems({"Fixed slots", "Upload rate based"});
+    comboChokingAlgorithm.addItems({tr("Fixed slots"), tr("Upload rate based")});
     comboChokingAlgorithm.setCurrentIndex(static_cast<int>(session->chokingAlgorithm()));
     addRow(CHOKING_ALGORITHM, tr("Upload slots behavior"), &comboChokingAlgorithm);
     // Seed choking algorithm
-    comboSeedChokingAlgorithm.addItems({"Round-robin", "Fastest upload", "Anti-leech"});
+    comboSeedChokingAlgorithm.addItems({tr("Round-robin"), tr("Fastest upload"), tr("Anti-leech")});
     comboSeedChokingAlgorithm.setCurrentIndex(static_cast<int>(session->seedChokingAlgorithm()));
     addRow(SEED_CHOKING_ALGORITHM, tr("Upload choking algorithm"), &comboSeedChokingAlgorithm);
 
@@ -481,12 +483,8 @@ void AdvancedSettings::loadAdvancedSettings()
 }
 
 template <typename T>
-void AdvancedSettings::addRow(int row, const QString &rowText, T* widget)
+void AdvancedSettings::addRow(int row, const QString &rowText, T *widget)
 {
-    // ignore mouse wheel event
-    static WheelEventEater filter;
-    widget->installEventFilter(&filter);
-
     setItem(row, PROPERTY, new QTableWidgetItem(rowText));
     setCellWidget(row, VALUE, widget);
 

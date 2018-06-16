@@ -169,7 +169,7 @@ initializeWindows = function() {
             var torrentsHaveSameShareRatio = true;
 
             // check if all selected torrents have same share ratio
-            for (var i = 0; i < hashes.length; i++) {
+            for (var i = 0; i < hashes.length; ++i) {
                 var hash = hashes[i];
                 var row = torrentsTable.rows[hash].full_data;
                 var origValues = row.ratio_limit + "|" + row.seeding_time_limit + "|" + row.max_ratio + "|" + row.max_seeding_time;
@@ -205,7 +205,7 @@ initializeWindows = function() {
         var hashes = torrentsTable.selectedRowsIds();
         if (hashes.length) {
             new Request({
-                url: 'api/v2/toggleSequentialDownload',
+                url: 'api/v2/torrents/toggleSequentialDownload',
                 method: 'post',
                 data: {
                     hashes: hashes.join("|")
@@ -219,7 +219,7 @@ initializeWindows = function() {
         var hashes = torrentsTable.selectedRowsIds();
         if (hashes.length) {
             new Request({
-                url: 'api/v2/toggleFirstLastPiecePrio',
+                url: 'api/v2/torrents/toggleFirstLastPiecePrio',
                 method: 'post',
                 data: {
                     hashes: hashes.join("|")
@@ -403,17 +403,20 @@ initializeWindows = function() {
     setLocationFN = function() {
         var hashes = torrentsTable.selectedRowsIds();
         if (hashes.length) {
+            var hash = hashes[0];
+            var row = torrentsTable.rows[hash];
+            var path = encodeURIComponent(row.full_data.save_path);
             new MochaUI.Window({
                 id: 'setLocationPage',
                 title: "QBT_TR(Set location)QBT_TR[CONTEXT=TransferListWidget]",
                 loadMethod: 'iframe',
-                contentURL: 'setlocation.html?hashes=' + hashes.join('|'),
+                contentURL: 'setlocation.html?hashes=' + hashes.join('|') + '&path=' + path,
                 scrollbars: false,
                 resizable: false,
                 maximizable: false,
                 paddingVertical: 0,
                 paddingHorizontal: 0,
-                width: 250,
+                width: 400,
                 height: 100
             });
         }
@@ -575,7 +578,7 @@ initializeWindows = function() {
         var names = [];
         if (selectedRows.length) {
             var rows = torrentsTable.getFilteredAndSortedRows();
-            for (var i = 0; i < selectedRows.length; i++) {
+            for (var i = 0; i < selectedRows.length; ++i) {
                 var hash = selectedRows[i];
                 names.push(rows[hash].full_data.name);
             }
@@ -588,7 +591,7 @@ initializeWindows = function() {
         var magnets = [];
         if (selectedRows.length) {
             var rows = torrentsTable.getFilteredAndSortedRows();
-            for (var i = 0; i < selectedRows.length; i++) {
+            for (var i = 0; i < selectedRows.length; ++i) {
                 var hash = selectedRows[i];
                 magnets.push(rows[hash].full_data.magnet_uri);
             }
@@ -633,7 +636,7 @@ initializeWindows = function() {
         });
     });
 
-    ['decrease_prio', 'increase_prio', 'top_prio', 'bottom_prio'].each(function(item) {
+    ['decreasePrio', 'increasePrio', 'topPrio', 'bottomPrio'].each(function(item) {
         addClickEvent(item, function(e) {
             new Event(e).stop();
             setPriorityFN(item);

@@ -1,6 +1,6 @@
 /*
  * Bittorrent Client using Qt and libtorrent.
- * Copyright (C) 2017  Mike Tzou
+ * Copyright (C) 2006  Christophe Dumez <chris@qbittorrent.org>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -26,34 +26,33 @@
  * exception statement from your version.
  */
 
-#ifndef UTILS_GUI_H
-#define UTILS_GUI_H
+#ifndef DOWNLOADFROMURL_H
+#define DOWNLOADFROMURL_H
 
-#include <QtGlobal>
-#include <QPixmap>
-#include <QSize>
+#include <QDialog>
 
-class QWidget;
-
-namespace Utils
+namespace Ui
 {
-    namespace Gui
-    {
-        void resize(QWidget *widget, const QSize &newSize = {});
-        qreal screenScalingFactor(const QWidget *widget);
-
-        template <typename T>
-        T scaledSize(const QWidget *widget, const T &size)
-        {
-            return (size * screenScalingFactor(widget));
-        }
-
-        QPixmap scaledPixmap(const QString &path, const QWidget *widget, const int height = 0);
-        QPixmap scaledPixmapSvg(const QString &path, const QWidget *widget, const int baseHeight);
-        QSize smallIconSize(const QWidget *widget = nullptr);
-        QSize mediumIconSize(const QWidget *widget = nullptr);
-        QSize largeIconSize(const QWidget *widget = nullptr);
-    }
+    class DownloadFromURLDialog;
 }
 
-#endif  // UTILS_GUI_H
+class DownloadFromURLDialog : public QDialog
+{
+    Q_OBJECT
+    Q_DISABLE_COPY(DownloadFromURLDialog)
+
+public:
+    explicit DownloadFromURLDialog(QWidget *parent);
+    ~DownloadFromURLDialog();
+
+signals:
+    void urlsReadyToBeDownloaded(const QStringList &torrentURLs);
+
+private slots:
+    void downloadButtonClicked();
+
+private:
+    Ui::DownloadFromURLDialog *m_ui;
+};
+
+#endif // DOWNLOADFROMURL_H

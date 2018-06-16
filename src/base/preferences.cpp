@@ -1,7 +1,7 @@
 /*
- * Bittorrent Client using Qt4 and libtorrent.
- * Copyright (C) 2006  Christophe Dumez
- * Copyright (C) 2014  sledgehammer999
+ * Bittorrent Client using Qt and libtorrent.
+ * Copyright (C) 2014  sledgehammer999 <sledgehammer999@qbittorrent.org>
+ * Copyright (C) 2006  Christophe Dumez <chris@qbittorrent.org>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -25,9 +25,6 @@
  * modify file(s), you may extend this exception to your version of the file(s),
  * but you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
- *
- * Contact : chris@qbittorrent.org
- * Contact : hammered999@gmail.com
  */
 
 #include "preferences.h"
@@ -48,6 +45,7 @@
 #ifdef Q_OS_WIN
 #include <shlobj.h>
 #include <winreg.h>
+#include <QRegularExpression>
 #endif
 
 #ifdef Q_OS_MAC
@@ -59,7 +57,7 @@
 #include "utils/fs.h"
 #include "utils/misc.h"
 
-Preferences *Preferences::m_instance = 0;
+Preferences *Preferences::m_instance = nullptr;
 
 Preferences::Preferences() = default;
 
@@ -78,7 +76,7 @@ void Preferences::freeInstance()
 {
     if (m_instance) {
         delete m_instance;
-        m_instance = 0;
+        m_instance = nullptr;
     }
 }
 
@@ -430,12 +428,12 @@ void Preferences::setSchedulerEndTime(const QTime &time)
     setValue("Preferences/Scheduler/end_time", time);
 }
 
-scheduler_days Preferences::getSchedulerDays() const
+SchedulerDays Preferences::getSchedulerDays() const
 {
-    return static_cast<scheduler_days>(value("Preferences/Scheduler/days", EVERY_DAY).toInt());
+    return static_cast<SchedulerDays>(value("Preferences/Scheduler/days", EVERY_DAY).toInt());
 }
 
-void Preferences::setSchedulerDays(scheduler_days days)
+void Preferences::setSchedulerDays(SchedulerDays days)
 {
     setValue("Preferences/Scheduler/days", static_cast<int>(days));
 }
@@ -589,6 +587,26 @@ void Preferences::setWebUiPassword(const QString &new_password)
     setValue("Preferences/WebUI/Password_ha1", md5.result().toHex());
 }
 
+bool Preferences::isWebUiClickjackingProtectionEnabled() const
+{
+    return value("Preferences/WebUI/ClickjackingProtection", true).toBool();
+}
+
+void Preferences::setWebUiClickjackingProtectionEnabled(bool enabled)
+{
+    setValue("Preferences/WebUI/ClickjackingProtection", enabled);
+}
+
+bool Preferences::isWebUiCSRFProtectionEnabled() const
+{
+    return value("Preferences/WebUI/CSRFProtection", true).toBool();
+}
+
+void Preferences::setWebUiCSRFProtectionEnabled(bool enabled)
+{
+    setValue("Preferences/WebUI/CSRFProtection", enabled);
+}
+
 bool Preferences::isWebUiHttpsEnabled() const
 {
     return value("Preferences/WebUI/HTTPS/Enabled", false).toBool();
@@ -700,12 +718,12 @@ QString Preferences::getUILockPasswordMD5() const
     return value("Locking/password").toString();
 }
 
-void Preferences::setUILockPassword(const QString &clear_password)
+void Preferences::setUILockPassword(const QString &clearPassword)
 {
     QCryptographicHash md5(QCryptographicHash::Md5);
-    md5.addData(clear_password.toLocal8Bit());
-    QString md5_password = md5.result().toHex();
-    setValue("Locking/password", md5_password);
+    md5.addData(clearPassword.toLocal8Bit());
+    QString md5Password = md5.result().toHex();
+    setValue("Locking/password", md5Password);
 }
 
 bool Preferences::isUILocked() const
@@ -859,7 +877,7 @@ namespace
         LONG res = ::RegQueryInfoKeyW(handle, NULL, NULL, NULL, &cSubKeys, &cMaxSubKeyLen, NULL, NULL, NULL, NULL, NULL, NULL);
 
         if (res == ERROR_SUCCESS) {
-            cMaxSubKeyLen++; // For null character
+            ++cMaxSubKeyLen; // For null character
             LPWSTR lpName = new WCHAR[cMaxSubKeyLen];
             DWORD cName;
 
@@ -1014,13 +1032,14 @@ bool Preferences::isMagnetLinkAssocSet()
     QSettings settings("HKEY_CURRENT_USER\\Software\\Classes", QSettings::NativeFormat);
 
     // Check magnet link assoc
-    QRegExp exe_reg("\"([^\"]+)\".*");
-    QString shell_command = Utils::Fs::toNativePath(settings.value("magnet/shell/open/command/Default", "").toString());
-    if (exe_reg.indexIn(shell_command) < 0)
+    const QString shellCommand = Utils::Fs::toNativePath(settings.value("magnet/shell/open/command/Default", "").toString());
+
+    const QRegularExpressionMatch exeRegMatch = QRegularExpression("\"([^\"]+)\".*").match(shellCommand);
+    if (!exeRegMatch.hasMatch())
         return false;
-    QString assoc_exe = exe_reg.cap(1);
-    qDebug("exe: %s", qUtf8Printable(assoc_exe));
-    if (assoc_exe.compare(Utils::Fs::toNativePath(qApp->applicationFilePath()), Qt::CaseInsensitive) != 0)
+
+    const QString assocExe = exeRegMatch.captured(1);
+    if (assocExe.compare(Utils::Fs::toNativePath(qApp->applicationFilePath()), Qt::CaseInsensitive) != 0)
         return false;
 
     return true;

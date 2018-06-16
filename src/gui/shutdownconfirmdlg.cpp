@@ -66,7 +66,7 @@ ShutdownConfirmDlg::ShutdownConfirmDlg(QWidget *parent, const ShutdownDialogActi
     move(Utils::Misc::screenCenter(this));
 
     m_timer.setInterval(1000); // 1sec
-    connect(&m_timer, SIGNAL(timeout()), this, SLOT(updateSeconds()));
+    connect(&m_timer, &QTimer::timeout, this, &ShutdownConfirmDlg::updateSeconds);
 
     Utils::Gui::resize(this);
 }
@@ -131,12 +131,12 @@ void ShutdownConfirmDlg::initText()
         break;
     }
 
-    m_msg += "\n";
+    m_msg += '\n';
     updateText();
 }
 
 void ShutdownConfirmDlg::updateText()
 {
-    QString t = tr("You can cancel the action within %1 seconds.").arg(QString::number(m_timeout)) + "\n";
+    QString t = tr("You can cancel the action within %1 seconds.").arg(QString::number(m_timeout)) + '\n';
     m_ui->shutdownText->setText(m_msg + t);
 }
