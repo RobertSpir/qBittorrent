@@ -1,6 +1,7 @@
 find_package(ZLIB 1.2.5.2 REQUIRED)
 
 add_library(qbt_base STATIC
+# headers
 bittorrent/addtorrentparams.h
 bittorrent/cachestatus.h
 bittorrent/infohash.h
@@ -48,6 +49,7 @@ search/searchdownloadhandler.h
 search/searchhandler.h
 search/searchpluginmanager.h
 utils/bytearray.h
+utils/foreignapps.h
 utils/fs.h
 utils/gzip.h
 utils/misc.h
@@ -72,6 +74,8 @@ torrentfilter.h
 tristatebool.h
 types.h
 unicodestrings.h
+
+# sources
 bittorrent/infohash.cpp
 bittorrent/magneturi.cpp
 bittorrent/peerinfo.cpp
@@ -114,6 +118,7 @@ search/searchdownloadhandler.cpp
 search/searchhandler.cpp
 search/searchpluginmanager.cpp
 utils/bytearray.cpp
+utils/foreignapps.cpp
 utils/fs.cpp
 utils/gzip.cpp
 utils/misc.cpp

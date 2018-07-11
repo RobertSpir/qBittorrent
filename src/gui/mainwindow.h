@@ -38,25 +38,24 @@
 
 class QCloseEvent;
 class QFileSystemWatcher;
-class QShortcut;
 class QSplitter;
 class QTabWidget;
 class QTimer;
 
-class DownloadFromURLDialog;
-class SearchWidget;
-class RSSWidget;
 class AboutDialog;
-class OptionsDialog;
-class TransferListWidget;
-class TransferListFiltersWidget;
-class PropertiesWidget;
-class StatusBar;
-class TorrentCreatorDlg;
+class DownloadFromURLDialog;
+class ExecutionLogWidget;
 class LineEdit;
-class ExecutionLog;
+class OptionsDialog;
 class PowerManagement;
+class PropertiesWidget;
+class RSSWidget;
+class SearchWidget;
 class StatsDialog;
+class StatusBar;
+class TorrentCreatorDialog;
+class TransferListFiltersWidget;
+class TransferListWidget;
 
 #ifdef Q_OS_WIN
 class QWinTaskbarButton;
@@ -235,7 +234,7 @@ private:
     QPointer<OptionsDialog> m_options;
     QPointer<AboutDialog> m_aboutDlg;
     QPointer<StatsDialog> m_statsDlg;
-    QPointer<TorrentCreatorDlg> m_createTorrentDlg;
+    QPointer<TorrentCreatorDialog> m_createTorrentDlg;
     QPointer<DownloadFromURLDialog> m_downloadFromURLDialog;
 #ifndef Q_OS_MAC
     QPointer<QSystemTrayIcon> m_systrayIcon;
@@ -257,7 +256,7 @@ private:
     QSplitter *m_splitter;
     QPointer<SearchWidget> m_searchWidget;
     QPointer<RSSWidget> m_rssWidget;
-    QPointer<ExecutionLog> m_executionLog;
+    QPointer<ExecutionLogWidget> m_executionLog;
     // Power Management
     PowerManagement *m_pwr;
     QTimer *m_preventTimer;

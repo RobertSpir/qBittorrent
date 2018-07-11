@@ -1,6 +1,6 @@
 /*
  * Bittorrent Client using Qt and libtorrent.
- * Copyright (C) 2015  sledgehammer999 <sledgehammer999@qbittorrent.org>
+ * Copyright (C) 2015  sledgehammer999 <hammered999@gmail.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -31,8 +31,6 @@
 #include <QComboBox>
 #include <QDebug>
 #include <QFileDialog>
-#include <QItemSelectionModel>
-#include <QPainter>
 #include <QTreeView>
 
 #include "base/bittorrent/session.h"

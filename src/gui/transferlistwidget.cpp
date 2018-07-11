@@ -49,17 +49,17 @@
 #include "base/utils/fs.h"
 #include "base/utils/string.h"
 #include "autoexpandabledialog.h"
-#include "deletionconfirmationdlg.h"
+#include "deletionconfirmationdialog.h"
 #include "guiiconprovider.h"
 #include "mainwindow.h"
-#include "optionsdlg.h"
+#include "optionsdialog.h"
 #include "previewselectdialog.h"
-#include "speedlimitdlg.h"
+#include "speedlimitdialog.h"
 #include "torrentcategorydialog.h"
-#include "torrentmodel.h"
 #include "transferlistdelegate.h"
+#include "transferlistmodel.h"
 #include "transferlistsortmodel.h"
-#include "updownratiodlg.h"
+#include "updownratiodialog.h"
 
 #ifdef Q_OS_MAC
 #include "macutilities.h"
@@ -213,12 +213,12 @@ TransferListWidget::TransferListWidget(QWidget *parent, MainWindow *mainWindow)
     setItemDelegate(m_listDelegate);
 
     // Create transfer list model
-    m_listModel = new TorrentModel(this);
+    m_listModel = new TransferListModel(this);
 
     m_sortFilterModel = new TransferListSortModel();
     m_sortFilterModel->setDynamicSortFilter(true);
     m_sortFilterModel->setSourceModel(m_listModel);
-    m_sortFilterModel->setFilterKeyColumn(TorrentModel::TR_NAME);
+    m_sortFilterModel->setFilterKeyColumn(TransferListModel::TR_NAME);
     m_sortFilterModel->setFilterRole(Qt::DisplayRole);
     m_sortFilterModel->setSortCaseSensitivity(Qt::CaseInsensitive);
 
@@ -239,40 +239,40 @@ TransferListWidget::TransferListWidget(QWidget *parent, MainWindow *mainWindow)
 
     // Default hidden columns
     if (!columnLoaded) {
-        setColumnHidden(TorrentModel::TR_ADD_DATE, true);
-        setColumnHidden(TorrentModel::TR_SEED_DATE, true);
-        setColumnHidden(TorrentModel::TR_UPLIMIT, true);
-        setColumnHidden(TorrentModel::TR_DLLIMIT, true);
-        setColumnHidden(TorrentModel::TR_TRACKER, true);
-        setColumnHidden(TorrentModel::TR_AMOUNT_DOWNLOADED, true);
-        setColumnHidden(TorrentModel::TR_AMOUNT_UPLOADED, true);
-        setColumnHidden(TorrentModel::TR_AMOUNT_DOWNLOADED_SESSION, true);
-        setColumnHidden(TorrentModel::TR_AMOUNT_UPLOADED_SESSION, true);
-        setColumnHidden(TorrentModel::TR_AMOUNT_LEFT, true);
-        setColumnHidden(TorrentModel::TR_TIME_ELAPSED, true);
-        setColumnHidden(TorrentModel::TR_SAVE_PATH, true);
-        setColumnHidden(TorrentModel::TR_COMPLETED, true);
-        setColumnHidden(TorrentModel::TR_RATIO_LIMIT, true);
-        setColumnHidden(TorrentModel::TR_SEEN_COMPLETE_DATE, true);
-        setColumnHidden(TorrentModel::TR_LAST_ACTIVITY, true);
-        setColumnHidden(TorrentModel::TR_TOTAL_SIZE, true);
+        setColumnHidden(TransferListModel::TR_ADD_DATE, true);
+        setColumnHidden(TransferListModel::TR_SEED_DATE, true);
+        setColumnHidden(TransferListModel::TR_UPLIMIT, true);
+        setColumnHidden(TransferListModel::TR_DLLIMIT, true);
+        setColumnHidden(TransferListModel::TR_TRACKER, true);
+        setColumnHidden(TransferListModel::TR_AMOUNT_DOWNLOADED, true);
+        setColumnHidden(TransferListModel::TR_AMOUNT_UPLOADED, true);
+        setColumnHidden(TransferListModel::TR_AMOUNT_DOWNLOADED_SESSION, true);
+        setColumnHidden(TransferListModel::TR_AMOUNT_UPLOADED_SESSION, true);
+        setColumnHidden(TransferListModel::TR_AMOUNT_LEFT, true);
+        setColumnHidden(TransferListModel::TR_TIME_ELAPSED, true);
+        setColumnHidden(TransferListModel::TR_SAVE_PATH, true);
+        setColumnHidden(TransferListModel::TR_COMPLETED, true);
+        setColumnHidden(TransferListModel::TR_RATIO_LIMIT, true);
+        setColumnHidden(TransferListModel::TR_SEEN_COMPLETE_DATE, true);
+        setColumnHidden(TransferListModel::TR_LAST_ACTIVITY, true);
+        setColumnHidden(TransferListModel::TR_TOTAL_SIZE, true);
     }
 
     //Ensure that at least one column is visible at all times
     bool atLeastOne = false;
-    for (unsigned int i = 0; i < TorrentModel::NB_COLUMNS; ++i) {
+    for (unsigned int i = 0; i < TransferListModel::NB_COLUMNS; ++i) {
         if (!isColumnHidden(i)) {
             atLeastOne = true;
             break;
         }
     }
     if (!atLeastOne)
-        setColumnHidden(TorrentModel::TR_NAME, false);
+        setColumnHidden(TransferListModel::TR_NAME, false);
 
     //When adding/removing columns between versions some may
     //end up being size 0 when the new version is launched with
     //a conf file from the previous version.
-    for (unsigned int i = 0; i < TorrentModel::NB_COLUMNS; ++i)
+    for (unsigned int i = 0; i < TransferListModel::NB_COLUMNS; ++i)
         if ((columnWidth(i) <= 0) && (!isColumnHidden(i)))
             resizeColumnToContents(i);
 
@@ -321,7 +321,7 @@ TransferListWidget::~TransferListWidget()
     qDebug() << Q_FUNC_INFO << "EXIT";
 }
 
-TorrentModel *TransferListWidget::getSourceModel() const
+TransferListModel *TransferListWidget::getSourceModel() const
 {
     return m_listModel;
 }
@@ -479,7 +479,7 @@ void TransferListWidget::deleteSelectedTorrents(bool deleteLocalFiles)
     if (torrents.empty()) return;
 
     if (Preferences::instance()->confirmTorrentDeletion()
-        && !DeletionConfirmationDlg::askForDeletionConfirmation(this, deleteLocalFiles, torrents.size(), torrents[0]->name()))
+        && !DeletionConfirmationDialog::askForDeletionConfirmation(this, deleteLocalFiles, torrents.size(), torrents[0]->name()))
         return;
     foreach (BitTorrent::TorrentHandle *const torrent, torrents)
         BitTorrent::Session::instance()->deleteTorrent(torrent->hash(), deleteLocalFiles);
@@ -495,7 +495,7 @@ void TransferListWidget::deleteVisibleTorrents()
 
     bool deleteLocalFiles = false;
     if (Preferences::instance()->confirmTorrentDeletion()
-        && !DeletionConfirmationDlg::askForDeletionConfirmation(this, deleteLocalFiles, torrents.size(), torrents[0]->name()))
+        && !DeletionConfirmationDialog::askForDeletionConfirmation(this, deleteLocalFiles, torrents.size(), torrents[0]->name()))
         return;
 
     foreach (BitTorrent::TorrentHandle *const torrent, torrents)
@@ -530,20 +530,20 @@ void TransferListWidget::bottomPrioSelectedTorrents()
 
 void TransferListWidget::copySelectedMagnetURIs() const
 {
-    QStringList magnet_uris;
+    QStringList magnetUris;
     foreach (BitTorrent::TorrentHandle *const torrent, getSelectedTorrents())
-        magnet_uris << torrent->toMagnetUri();
+        magnetUris << torrent->toMagnetUri();
 
-    qApp->clipboard()->setText(magnet_uris.join('\n'));
+    qApp->clipboard()->setText(magnetUris.join('\n'));
 }
 
 void TransferListWidget::copySelectedNames() const
 {
-    QStringList torrent_names;
+    QStringList torrentNames;
     foreach (BitTorrent::TorrentHandle *const torrent, getSelectedTorrents())
-        torrent_names << torrent->name();
+        torrentNames << torrent->name();
 
-    qApp->clipboard()->setText(torrent_names.join('\n'));
+    qApp->clipboard()->setText(torrentNames.join('\n'));
 }
 
 void TransferListWidget::copySelectedHashes() const
@@ -558,9 +558,9 @@ void TransferListWidget::copySelectedHashes() const
 void TransferListWidget::hidePriorityColumn(bool hide)
 {
     qDebug("hidePriorityColumn(%d)", hide);
-    setColumnHidden(TorrentModel::TR_PRIORITY, hide);
-    if (!hide && !columnWidth(TorrentModel::TR_PRIORITY))
-        resizeColumnToContents(TorrentModel::TR_PRIORITY);
+    setColumnHidden(TransferListModel::TR_PRIORITY, hide);
+    if (!hide && !columnWidth(TransferListModel::TR_PRIORITY))
+        resizeColumnToContents(TransferListModel::TR_PRIORITY);
 }
 
 void TransferListWidget::openSelectedTorrentsFolder() const
@@ -669,7 +669,7 @@ void TransferListWidget::setMaxRatioSelectedTorrents()
         useGlobalValue = (torrents[0]->ratioLimit() == BitTorrent::TorrentHandle::USE_GLOBAL_RATIO)
                 && (torrents[0]->seedingTimeLimit() == BitTorrent::TorrentHandle::USE_GLOBAL_SEEDING_TIME);
 
-    UpDownRatioDlg dlg(useGlobalValue, currentMaxRatio, BitTorrent::TorrentHandle::MAX_RATIO,
+    UpDownRatioDialog dlg(useGlobalValue, currentMaxRatio, BitTorrent::TorrentHandle::MAX_RATIO,
                        currentMaxSeedingTime, BitTorrent::TorrentHandle::MAX_SEEDING_TIME, this);
     if (dlg.exec() != QDialog::Accepted) return;
 
@@ -706,7 +706,7 @@ void TransferListWidget::displayDLHoSMenu(const QPoint&)
     hideshowColumn.setTitle(tr("Column visibility"));
     QList<QAction*> actions;
     for (int i = 0; i < m_listModel->columnCount(); ++i) {
-        if (!BitTorrent::Session::instance()->isQueueingSystemEnabled() && (i == TorrentModel::TR_PRIORITY)) {
+        if (!BitTorrent::Session::instance()->isQueueingSystemEnabled() && (i == TransferListModel::TR_PRIORITY)) {
             actions.append(nullptr);
             continue;
         }
@@ -716,7 +716,7 @@ void TransferListWidget::displayDLHoSMenu(const QPoint&)
         actions.append(myAct);
     }
     int visibleCols = 0;
-    for (unsigned int i = 0; i < TorrentModel::NB_COLUMNS; ++i) {
+    for (unsigned int i = 0; i < TransferListModel::NB_COLUMNS; ++i) {
         if (!isColumnHidden(i))
             ++visibleCols;
 
@@ -826,7 +826,7 @@ void TransferListWidget::renameSelectedTorrent()
     const QModelIndexList selectedIndexes = selectionModel()->selectedRows();
     if ((selectedIndexes.size() != 1) || !selectedIndexes.first().isValid()) return;
 
-    const QModelIndex mi = m_listModel->index(mapToSource(selectedIndexes.first()).row(), TorrentModel::TR_NAME);
+    const QModelIndex mi = m_listModel->index(mapToSource(selectedIndexes.first()).row(), TransferListModel::TR_NAME);
     BitTorrent::TorrentHandle *const torrent = m_listModel->torrentHandle(mi);
     if (!torrent) return;
 
@@ -843,7 +843,7 @@ void TransferListWidget::renameSelectedTorrent()
 void TransferListWidget::setSelectionCategory(QString category)
 {
     foreach (const QModelIndex &index, selectionModel()->selectedRows())
-        m_listModel->setData(m_listModel->index(mapToSource(index).row(), TorrentModel::TR_CATEGORY), category, Qt::DisplayRole);
+        m_listModel->setData(m_listModel->index(mapToSource(index).row(), TransferListModel::TR_CATEGORY), category, Qt::DisplayRole);
 }
 
 void TransferListWidget::addSelectionTag(const QString &tag)
@@ -1199,8 +1199,8 @@ void TransferListWidget::applyStatusFilter(int f)
     m_sortFilterModel->setStatusFilter(static_cast<TorrentFilter::Type>(f));
     // Select first item if nothing is selected
     if (selectionModel()->selectedRows(0).empty() && (m_sortFilterModel->rowCount() > 0)) {
-        qDebug("Nothing is selected, selecting first row: %s", qUtf8Printable(m_sortFilterModel->index(0, TorrentModel::TR_NAME).data().toString()));
-        selectionModel()->setCurrentIndex(m_sortFilterModel->index(0, TorrentModel::TR_NAME), QItemSelectionModel::SelectCurrent | QItemSelectionModel::Rows);
+        qDebug("Nothing is selected, selecting first row: %s", qUtf8Printable(m_sortFilterModel->index(0, TransferListModel::TR_NAME).data().toString()));
+        selectionModel()->setCurrentIndex(m_sortFilterModel->index(0, TransferListModel::TR_NAME), QItemSelectionModel::SelectCurrent | QItemSelectionModel::Rows);
     }
 }
 
