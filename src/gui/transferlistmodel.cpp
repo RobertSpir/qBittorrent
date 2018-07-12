@@ -320,7 +320,7 @@ void TransferListModel::handleTorrentsUpdated()
 
 // Static functions
 
-QIcon TorrentModel::getIconByState(BitTorrent::TorrentState state)
+QIcon TransferListModel::getIconByState(BitTorrent::TorrentState state)
 {
     switch (state) {
     case BitTorrent::TorrentState::Downloading:

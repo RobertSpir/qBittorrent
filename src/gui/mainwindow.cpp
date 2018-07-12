@@ -2168,7 +2168,7 @@ void MainWindow::updateTaskbar(BitTorrent::TorrentHandle* torrent)
     if (!m_taskbarButton)
         return;
     if (torrent) {
-        m_taskbarButton->setOverlayIcon(TorrentModel::getIconByState(torrent->state()));
+        m_taskbarButton->setOverlayIcon(TransferListModel::getIconByState(torrent->state()));
         switch (torrent->state()) {
         case BitTorrent::TorrentState::Downloading:
         case BitTorrent::TorrentState::ForcedDownloading:
