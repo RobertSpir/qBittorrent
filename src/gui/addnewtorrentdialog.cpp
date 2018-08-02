@@ -445,7 +445,7 @@ void AddNewTorrentDialog::updateDiskSpaceLabel()
     sizeString += " (";
     sizeString += tr("Free space on disk: %1").arg(Utils::Misc::friendlyUnit(Utils::Fs::freeDiskSpaceOnPath(
                                                                    m_ui->savePath->selectedPath())));
-    sizeString += ")";
+    sizeString += ')';
     m_ui->labelSize->setText(sizeString);
 }
 
@@ -551,7 +551,7 @@ void AddNewTorrentDialog::renameSelectedFile()
         if (!newPath.endsWith('/')) newPath += '/';
         // Check for overwriting
         for (int i = 0; i < m_torrentInfo.filesCount(); ++i) {
-            const QString &currentName = m_torrentInfo.filePath(i);
+            const QString currentName = m_torrentInfo.filePath(i);
 #if defined(Q_OS_UNIX) || defined(Q_WS_QWS)
             if (currentName.startsWith(newPath, Qt::CaseSensitive)) {
 #else
@@ -565,7 +565,7 @@ void AddNewTorrentDialog::renameSelectedFile()
         }
         // Replace path in all files
         for (int i = 0; i < m_torrentInfo.filesCount(); ++i) {
-            const QString &currentName = m_torrentInfo.filePath(i);
+            const QString currentName = m_torrentInfo.filePath(i);
             if (currentName.startsWith(oldPath)) {
                 QString newName = currentName;
                 newName.replace(0, oldPath.length(), newPath);

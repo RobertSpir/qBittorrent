@@ -256,7 +256,7 @@ void Preferences::setWinStartup(bool b)
 {
     QSettings settings("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run", QSettings::NativeFormat);
     if (b) {
-        const QString binPath = "\"" + Utils::Fs::toNativePath(qApp->applicationFilePath()) + "\"";
+        const QString binPath = '"' + Utils::Fs::toNativePath(qApp->applicationFilePath()) + '"';
         settings.setValue("qBittorrent", binPath);
     }
     else {
@@ -510,7 +510,7 @@ void Preferences::setWebUiAuthSubnetWhitelist(QStringList subnets)
 
 QString Preferences::getServerDomains() const
 {
-    return value("Preferences/WebUI/ServerDomains", "*").toString();
+    return value("Preferences/WebUI/ServerDomains", '*').toString();
 }
 
 void Preferences::setServerDomains(const QString &str)
@@ -520,7 +520,7 @@ void Preferences::setServerDomains(const QString &str)
 
 QString Preferences::getWebUiAddress() const
 {
-    return value("Preferences/WebUI/Address", "*").toString().trimmed();
+    return value("Preferences/WebUI/Address", '*').toString().trimmed();
 }
 
 void Preferences::setWebUiAddress(const QString &addr)
@@ -997,7 +997,7 @@ QString Preferences::getPythonPath()
     // Fallback: Detect python from default locations
     const QStringList dirs = QDir("C:/").entryList(QStringList("Python*"), QDir::Dirs, QDir::Name | QDir::Reversed);
     foreach (const QString &dir, dirs) {
-        const QString path("C:/" + dir + "/");
+        const QString path("C:/" + dir + '/');
         if (QFile::exists(path + "python.exe"))
             return path;
     }
@@ -1068,8 +1068,8 @@ void Preferences::setMagnetLinkAssoc(bool set)
 
     // Magnet association
     if (set) {
-        const QString commandStr = "\"" + qApp->applicationFilePath() + "\" \"%1\"";
-        const QString iconStr = "\"" + qApp->applicationFilePath() + "\",1";
+        const QString commandStr = '"' + qApp->applicationFilePath() + "\" \"%1\"";
+        const QString iconStr = '"' + qApp->applicationFilePath() + "\",1";
 
         settings.setValue("magnet/Default", "URL:Magnet link");
         settings.setValue("magnet/Content Type", "application/x-magnet");

@@ -328,7 +328,7 @@ QString TorrentHandle::rootPath(bool actual) const
         return QString();
 
     QString firstFilePath = filePath(0);
-    const int slashIndex = firstFilePath.indexOf("/");
+    const int slashIndex = firstFilePath.indexOf('/');
     if (slashIndex >= 0)
         return QDir(savePath(actual)).absoluteFilePath(firstFilePath.left(slashIndex));
     else
@@ -556,7 +556,7 @@ bool TorrentHandle::belongsToCategory(const QString &category) const
 
     if (m_category == category) return true;
 
-    if (m_session->isSubcategoriesEnabled() && m_category.startsWith(category + "/"))
+    if (m_session->isSubcategoriesEnabled() && m_category.startsWith(category + '/'))
         return true;
 
     return false;
@@ -1304,13 +1304,21 @@ void TorrentHandle::toggleSequentialDownload()
 
 void TorrentHandle::setFirstLastPiecePriority(const bool enabled)
 {
+    setFirstLastPiecePriorityImpl(enabled);
+}
+
+void TorrentHandle::setFirstLastPiecePriorityImpl(const bool enabled, const QVector<int> &updatedFilePrio)
+{
+    // Download first and last pieces first for every file in the torrent
+
     if (!hasMetadata()) {
         m_needsToSetFirstLastPiecePriority = enabled;
         return;
     }
 
-    // Download first and last pieces first for every file in the torrent
-    const std::vector<int> filePriorities = nativeHandle().file_priorities();
+    // Updating file priorities is an async operation in libtorrent, when we just updated it and immediately query it
+    // we might get the old/wrong values, so we rely on `updatedFilePrio` in this case.
+    const std::vector<int> filePriorities = !updatedFilePrio.isEmpty() ? updatedFilePrio.toStdVector() : nativeHandle().file_priorities();
     std::vector<int> piecePriorities = nativeHandle().piece_priorities();
     for (int index = 0; index < static_cast<int>(filePriorities.size()); ++index) {
         const int filePrio = filePriorities[index];
@@ -1687,12 +1695,12 @@ void TorrentHandle::handleFileRenamedAlert(const libtorrent::file_renamed_alert 
     // TODO: Check this!
     if (filesCount() > 1) {
         // Check if folders were renamed
-        QStringList oldPathParts = m_torrentInfo.origFilePath(p->index).split("/");
+        QStringList oldPathParts = m_torrentInfo.origFilePath(p->index).split('/');
         oldPathParts.removeLast();
-        QString oldPath = oldPathParts.join("/");
-        QStringList newPathParts = newName.split("/");
+        QString oldPath = oldPathParts.join('/');
+        QStringList newPathParts = newName.split('/');
         newPathParts.removeLast();
-        QString newPath = newPathParts.join("/");
+        QString newPath = newPathParts.join('/');
         if (!newPathParts.isEmpty() && (oldPath != newPath)) {
             qDebug("oldPath(%s) != newPath(%s)", qUtf8Printable(oldPath), qUtf8Printable(newPath));
             oldPath = QString("%1/%2").arg(savePath(true), oldPath);
@@ -1995,7 +2003,7 @@ void TorrentHandle::prioritizeFiles(const QVector<int> &priorities)
     if (priorities.size() != filesCount()) return;
 
     // Save first/last piece first option state
-    bool firstLastPieceFirst = hasFirstLastPiecePriority();
+    const bool firstLastPieceFirst = hasFirstLastPiecePriority();
 
     // Reset 'm_hasSeedStatus' if needed in order to react again to
     // 'torrent_finished_alert' and eg show tray notifications
@@ -2022,7 +2030,7 @@ void TorrentHandle::prioritizeFiles(const QVector<int> &priorities)
             // Make sure the file does not already exists
             if (QDir(parentAbsPath).dirName() != ".unwanted") {
                 QString unwantedAbsPath = parentAbsPath + "/.unwanted";
-                QString newAbsPath = unwantedAbsPath + "/" + Utils::Fs::fileName(filepath);
+                QString newAbsPath = unwantedAbsPath + '/' + Utils::Fs::fileName(filepath);
                 qDebug() << "Unwanted path is" << unwantedAbsPath;
                 if (QFile::exists(newAbsPath)) {
                     qWarning() << "File" << newAbsPath << "already exists at destination.";
@@ -2042,8 +2050,8 @@ void TorrentHandle::prioritizeFiles(const QVector<int> &priorities)
                 }
 #endif
                 QString parentPath = Utils::Fs::branchPath(filepath);
-                if (!parentPath.isEmpty() && !parentPath.endsWith("/"))
-                    parentPath += "/";
+                if (!parentPath.isEmpty() && !parentPath.endsWith('/'))
+                    parentPath += '/';
                 renameFile(i, parentPath + ".unwanted/" + Utils::Fs::fileName(filepath));
             }
         }
@@ -2060,15 +2068,15 @@ void TorrentHandle::prioritizeFiles(const QVector<int> &priorities)
                     renameFile(i, QDir(newRelPath).filePath(oldName));
 
                 // Remove .unwanted directory if empty
-                qDebug() << "Attempting to remove .unwanted folder at " << QDir(spath + "/" + newRelPath).absoluteFilePath(".unwanted");
-                QDir(spath + "/" + newRelPath).rmdir(".unwanted");
+                qDebug() << "Attempting to remove .unwanted folder at " << QDir(spath + '/' + newRelPath).absoluteFilePath(".unwanted");
+                QDir(spath + '/' + newRelPath).rmdir(".unwanted");
             }
         }
     }
 
     // Restore first/last piece first option if necessary
     if (firstLastPieceFirst)
-        setFirstLastPiecePriority(true);
+        setFirstLastPiecePriorityImpl(true, priorities);
 
     updateStatus();
 }
