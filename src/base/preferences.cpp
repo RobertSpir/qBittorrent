@@ -183,14 +183,34 @@ void Preferences::setMinimizeToTray(bool b)
     setValue("Preferences/General/MinimizeToTray", b);
 }
 
+bool Preferences::minimizeToTrayNotified() const
+{
+    return value("Preferences/General/MinimizeToTrayNotified", false).toBool();
+}
+
+void Preferences::setMinimizeToTrayNotified(bool b)
+{
+    setValue("Preferences/General/MinimizeToTrayNotified", b);
+}
+
 bool Preferences::closeToTray() const
 {
-    return value("Preferences/General/CloseToTray", false).toBool();
+    return value("Preferences/General/CloseToTray", true).toBool();
 }
 
 void Preferences::setCloseToTray(bool b)
 {
     setValue("Preferences/General/CloseToTray", b);
+}
+
+bool Preferences::closeToTrayNotified() const
+{
+    return value("Preferences/General/CloseToTrayNotified", false).toBool();
+}
+
+void Preferences::setCloseToTrayNotified(bool b)
+{
+    setValue("Preferences/General/CloseToTrayNotified", b);
 }
 #endif
 
@@ -235,14 +255,24 @@ void Preferences::setSplashScreenDisabled(bool b)
 }
 
 // Preventing from system suspend while active torrents are presented.
-bool Preferences::preventFromSuspend() const
+bool Preferences::preventFromSuspendWhenDownloading() const
 {
-    return value("Preferences/General/PreventFromSuspend", false).toBool();
+    return value("Preferences/General/PreventFromSuspendWhenDownloading", false).toBool();
 }
 
-void Preferences::setPreventFromSuspend(bool b)
+void Preferences::setPreventFromSuspendWhenDownloading(bool b)
 {
-    setValue("Preferences/General/PreventFromSuspend", b);
+    setValue("Preferences/General/PreventFromSuspendWhenDownloading", b);
+}
+
+bool Preferences::preventFromSuspendWhenSeeding() const
+{
+    return value("Preferences/General/PreventFromSuspendWhenSeeding", false).toBool();
+}
+
+void Preferences::setPreventFromSuspendWhenSeeding(bool b)
+{
+    setValue("Preferences/General/PreventFromSuspendWhenSeeding", b);
 }
 
 #ifdef Q_OS_WIN
@@ -1499,6 +1529,16 @@ void Preferences::setTransHeaderState(const QByteArray &state)
     setValue("TransferList/qt5/HeaderState", state);
 }
 
+bool Preferences::getRegexAsFilteringPattern() const
+{
+    return value("TransferList/UseRegexAsFilteringPattern", false).toBool();
+}
+
+void Preferences::setRegexAsFilteringPattern(const bool checked)
+{
+    setValue("TransferList/UseRegexAsFilteringPattern", checked);
+}
+
 // From old RssSettings class
 bool Preferences::isRSSWidgetEnabled() const
 {
@@ -1562,6 +1602,8 @@ void Preferences::setSpeedWidgetGraphEnable(int id, const bool enable)
 
 void Preferences::upgrade()
 {
+    SettingsStorage *settingsStorage = SettingsStorage::instance();
+
     QStringList labels = value("TransferListFilters/customLabels").toStringList();
     if (!labels.isEmpty()) {
         QVariantMap categories = value("BitTorrent/Session/Categories").toMap();
@@ -1570,10 +1612,17 @@ void Preferences::upgrade()
                 categories[label] = "";
         }
         setValue("BitTorrent/Session/Categories", categories);
-        SettingsStorage::instance()->removeValue("TransferListFilters/customLabels");
+        settingsStorage->removeValue("TransferListFilters/customLabels");
     }
 
-    SettingsStorage::instance()->removeValue("Preferences/Downloads/AppendLabel");
+    settingsStorage->removeValue("Preferences/Downloads/AppendLabel");
+
+    // Inhibit sleep based on running downloads/available seeds rather than network activity.
+    if (value("Preferences/General/PreventFromSuspend", false).toBool()) {
+        setPreventFromSuspendWhenDownloading(true);
+        setPreventFromSuspendWhenSeeding(true);
+    }
+    settingsStorage->removeValue("Preferences/General/PreventFromSuspend");
 }
 
 void Preferences::apply()
