@@ -7,11 +7,11 @@ api/isessionmanager.h
 api/authcontroller.h
 api/logcontroller.h
 api/rsscontroller.h
+api/searchcontroller.h
 api/synccontroller.h
 api/torrentscontroller.h
 api/transfercontroller.h
 api/serialize/serialize_torrent.h
-extra_translations.h
 webapplication.h
 webui.h
 
@@ -22,6 +22,7 @@ api/appcontroller.cpp
 api/authcontroller.cpp
 api/logcontroller.cpp
 api/rsscontroller.cpp
+api/searchcontroller.cpp
 api/synccontroller.cpp
 api/torrentscontroller.cpp
 api/transfercontroller.cpp

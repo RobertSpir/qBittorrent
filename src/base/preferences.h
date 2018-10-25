@@ -373,6 +373,8 @@ public:
     void setNetworkCookies(const QList<QNetworkCookie> &cookies);
 
     // SpeedWidget
+    bool isSpeedWidgetEnabled() const;
+    void setSpeedWidgetEnabled(bool enabled);
     int getSpeedWidgetPeriod() const;
     void setSpeedWidgetPeriod(const int period);
     bool getSpeedWidgetGraphEnable(int id) const;
