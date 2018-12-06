@@ -203,6 +203,8 @@ public:
     void setWebUiClickjackingProtectionEnabled(bool enabled);
     bool isWebUiCSRFProtectionEnabled() const;
     void setWebUiCSRFProtectionEnabled(bool enabled);
+    bool isWebUIHostHeaderValidationEnabled() const;
+    void setWebUIHostHeaderValidationEnabled(bool enabled);
 
     // HTTPS
     bool isWebUiHttpsEnabled() const;
