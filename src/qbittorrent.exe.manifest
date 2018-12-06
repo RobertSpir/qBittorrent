@@ -21,6 +21,11 @@
     </security>
   </trustInfo>
 
+  <asmv3:application>
+    <asmv3:windowsSettings xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">
+      <longPathAware>true</longPathAware>
+    </asmv3:windowsSettings>
+  </asmv3:application>
   <!-- Declare support for various versions of Windows -->
   <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
       <application>
