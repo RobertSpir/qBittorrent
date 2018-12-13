@@ -59,6 +59,7 @@
 #include "base/torrentfileguard.h"
 #include "base/unicodestrings.h"
 #include "base/utils/fs.h"
+#include "base/utils/password.h"
 #include "base/utils/random.h"
 #include "addnewtorrentdialog.h"
 #include "advancedsettings.h"
@@ -160,10 +161,10 @@ OptionsDialog::OptionsDialog(QWidget *parent)
     m_ui->hsplitter->setCollapsible(0, false);
     m_ui->hsplitter->setCollapsible(1, false);
     // Get apply button in button box
-    QList<QAbstractButton *> buttons = m_ui->buttonBox->buttons();
-    foreach (QAbstractButton *button, buttons) {
+    const QList<QAbstractButton *> buttons = m_ui->buttonBox->buttons();
+    for (QAbstractButton *button : buttons) {
         if (m_ui->buttonBox->buttonRole(button) == QDialogButtonBox::ApplyRole) {
-            applyButton = button;
+            m_applyButton = button;
             break;
         }
     }
@@ -426,13 +427,13 @@ OptionsDialog::OptionsDialog(QWidget *parent)
     connect(m_ui->btnEditRules, &QPushButton::clicked, this, [this]() { AutomatedRssDownloader(this).exec(); });
 
     // Disable apply Button
-    applyButton->setEnabled(false);
+    m_applyButton->setEnabled(false);
     // Tab selection mechanism
     connect(m_ui->tabSelection, &QListWidget::currentItemChanged, this, &ThisType::changePage);
     // Load Advanced settings
-    advancedSettings = new AdvancedSettings(m_ui->tabAdvancedPage);
-    m_ui->advPageLayout->addWidget(advancedSettings);
-    connect(advancedSettings, &AdvancedSettings::settingsChanged, this, &ThisType::enableApplyButton);
+    m_advancedSettings = new AdvancedSettings(m_ui->tabAdvancedPage);
+    m_ui->advPageLayout->addWidget(m_advancedSettings);
+    connect(m_advancedSettings, &AdvancedSettings::settingsChanged, this, &ThisType::enableApplyButton);
 
     m_ui->textFileLogPath->setDialogCaption(tr("Choose a save directory"));
     m_ui->textFileLogPath->setMode(FileSystemPathEdit::Mode::DirectorySave);
@@ -455,9 +456,9 @@ OptionsDialog::OptionsDialog(QWidget *parent)
 
     // disable mouse wheel event on widgets to avoid mis-selection
     WheelEventEater *wheelEventEater = new WheelEventEater(this);
-    for (QComboBox *widget : copyAsConst(findChildren<QComboBox *>()))
+    for (QComboBox *widget : asConst(findChildren<QComboBox *>()))
         widget->installEventFilter(wheelEventEater);
-    for (QSpinBox *widget : copyAsConst(findChildren<QSpinBox *>()))
+    for (QSpinBox *widget : asConst(findChildren<QSpinBox *>()))
         widget->installEventFilter(wheelEventEater);
 
     loadWindowState();
@@ -471,7 +472,7 @@ void OptionsDialog::initializeLanguageCombo()
     // List language files
     const QDir langDir(":/lang");
     const QStringList langFiles = langDir.entryList(QStringList("qbittorrent_*.qm"), QDir::Files);
-    foreach (const QString langFile, langFiles) {
+    for (const QString &langFile : langFiles) {
         QString localeStr = langFile.mid(12); // remove "qbittorrent_"
         localeStr.chop(3); // Remove ".qm"
         QString languageName;
@@ -495,7 +496,7 @@ OptionsDialog::~OptionsDialog()
 
     saveWindowState();
 
-    foreach (const QString &path, addedScanDirs)
+    for (const QString &path : asConst(m_addedScanDirs))
         ScanFoldersModel::instance()->removePath(path);
     ScanFoldersModel::instance()->configure(); // reloads "removed" paths
     delete m_ui;
@@ -543,7 +544,7 @@ void OptionsDialog::saveWindowState() const
 
 void OptionsDialog::saveOptions()
 {
-    applyButton->setEnabled(false);
+    m_applyButton->setEnabled(false);
     Preferences *const pref = Preferences::instance();
     // Load the translation
     QString locale = getLocale();
@@ -628,11 +629,11 @@ void OptionsDialog::saveOptions()
     AddNewTorrentDialog::setTopLevel(m_ui->checkAdditionDialogFront->isChecked());
     session->setAddTorrentPaused(addTorrentsInPause());
     session->setCreateTorrentSubfolder(m_ui->checkCreateSubfolder->isChecked());
-    ScanFoldersModel::instance()->removeFromFSWatcher(removedScanDirs);
-    ScanFoldersModel::instance()->addToFSWatcher(addedScanDirs);
+    ScanFoldersModel::instance()->removeFromFSWatcher(m_removedScanDirs);
+    ScanFoldersModel::instance()->addToFSWatcher(m_addedScanDirs);
     ScanFoldersModel::instance()->makePersistent();
-    removedScanDirs.clear();
-    addedScanDirs.clear();
+    m_removedScanDirs.clear();
+    m_addedScanDirs.clear();
     session->setTorrentExportDirectory(getTorrentExportDir());
     session->setFinishedTorrentExportDirectory(getFinishedTorrentExportDir());
     pref->setMailNotificationEnabled(m_ui->groupMailNotification->isChecked());
@@ -731,7 +732,8 @@ void OptionsDialog::saveOptions()
         }
         // Authentication
         pref->setWebUiUsername(webUiUsername());
-        pref->setWebUiPassword(webUiPassword());
+        if (!webUiPassword().isEmpty())
+            pref->setWebUIPassword(Utils::Password::PBKDF2::generate(webUiPassword()));
         pref->setWebUiLocalAuthEnabled(!m_ui->checkBypassLocalAuth->isChecked());
         pref->setWebUiAuthSubnetWhitelistEnabled(m_ui->checkBypassAuthSubnetWhitelist->isChecked());
         // Security
@@ -751,7 +753,7 @@ void OptionsDialog::saveOptions()
     // End Web UI
     // End preferences
     // Save advanced settings
-    advancedSettings->saveAdvancedSettings();
+    m_advancedSettings->saveAdvancedSettings();
     // Assume that user changed multiple settings
     // so it's best to save immediately
     pref->apply();
@@ -1094,7 +1096,6 @@ void OptionsDialog::loadOptions()
     setSslCertificate(pref->getWebUiHttpsCertificate());
     setSslKey(pref->getWebUiHttpsKey());
     m_ui->textWebUiUsername->setText(pref->getWebUiUsername());
-    m_ui->textWebUiPassword->setText(pref->getWebUiPassword());
     m_ui->checkBypassLocalAuth->setChecked(!pref->isWebUiLocalAuthEnabled());
     m_ui->checkBypassAuthSubnetWhitelist->setChecked(pref->isWebUiAuthSubnetWhitelistEnabled());
     m_ui->IPSubnetWhitelistButton->setEnabled(m_ui->checkBypassAuthSubnetWhitelist->isChecked());
@@ -1244,7 +1245,7 @@ int OptionsDialog::getMaxUploadsPerTorrent() const
 
 void OptionsDialog::on_buttonBox_accepted()
 {
-    if (applyButton->isEnabled()) {
+    if (m_applyButton->isEnabled()) {
         if (!schedTimesOk()) {
             m_ui->tabSelection->setCurrentRow(TAB_SPEED);
             return;
@@ -1253,7 +1254,11 @@ void OptionsDialog::on_buttonBox_accepted()
             m_ui->tabSelection->setCurrentRow(TAB_WEBUI);
             return;
         }
-        applyButton->setEnabled(false);
+        if (!isAlternativeWebUIPathValid()) {
+            m_ui->tabSelection->setCurrentRow(TAB_WEBUI);
+            return;
+        }
+        m_applyButton->setEnabled(false);
         this->hide();
         saveOptions();
     }
@@ -1263,12 +1268,16 @@ void OptionsDialog::on_buttonBox_accepted()
 
 void OptionsDialog::applySettings(QAbstractButton *button)
 {
-    if (button == applyButton) {
+    if (button == m_applyButton) {
         if (!schedTimesOk()) {
             m_ui->tabSelection->setCurrentRow(TAB_SPEED);
             return;
         }
         if (!webUIAuthenticationOk()) {
+            m_ui->tabSelection->setCurrentRow(TAB_WEBUI);
+            return;
+        }
+        if (!isAlternativeWebUIPathValid()) {
             m_ui->tabSelection->setCurrentRow(TAB_WEBUI);
             return;
         }
@@ -1295,7 +1304,7 @@ bool OptionsDialog::useAdditionDialog() const
 
 void OptionsDialog::enableApplyButton()
 {
-    applyButton->setEnabled(true);
+    m_applyButton->setEnabled(true);
 }
 
 void OptionsDialog::toggleComboRatioLimitAct()
@@ -1490,7 +1499,7 @@ void OptionsDialog::on_addScanFolderButton_clicked()
             break;
         default:
             pref->setScanDirsLastPath(dir);
-            addedScanDirs << dir;
+            m_addedScanDirs << dir;
             for (int i = 0; i < ScanFoldersModel::instance()->columnCount(); ++i)
                 m_ui->scanFoldersView->resizeColumnToContents(i);
             enableApplyButton();
@@ -1508,9 +1517,9 @@ void OptionsDialog::on_removeScanFolderButton_clicked()
     if (selected.isEmpty())
         return;
     Q_ASSERT(selected.count() == ScanFoldersModel::instance()->columnCount());
-    foreach (const QModelIndex &index, selected) {
+    for (const QModelIndex &index : selected) {
         if (index.column() == ScanFoldersModel::WATCH)
-            removedScanDirs << index.data().toString();
+            m_removedScanDirs << index.data().toString();
     }
     ScanFoldersModel::instance()->removePath(selected.first().row(), false);
 }
@@ -1747,8 +1756,17 @@ bool OptionsDialog::webUIAuthenticationOk()
         QMessageBox::warning(this, tr("Length Error"), tr("The Web UI username must be at least 3 characters long."));
         return false;
     }
-    if (webUiPassword().length() < 6) {
+    if (!webUiPassword().isEmpty() && (webUiPassword().length() < 6)) {
         QMessageBox::warning(this, tr("Length Error"), tr("The Web UI password must be at least 6 characters long."));
+        return false;
+    }
+    return true;
+}
+
+bool OptionsDialog::isAlternativeWebUIPathValid()
+{
+    if (m_ui->groupAltWebUI->isChecked() && m_ui->textWebUIRootFolder->selectedPath().trimmed().isEmpty()) {
+        QMessageBox::warning(this, tr("Location Error"), tr("The alternative Web UI files location cannot be blank."));
         return false;
     }
     return true;

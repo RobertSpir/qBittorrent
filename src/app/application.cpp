@@ -44,6 +44,7 @@
 #endif
 
 #ifndef DISABLE_GUI
+#include <QMessageBox>
 #ifdef Q_OS_WIN
 #include <QSessionManager>
 #include <QSharedMemory>
@@ -61,6 +62,7 @@
 
 #include "base/bittorrent/session.h"
 #include "base/bittorrent/torrenthandle.h"
+#include "base/exceptions.h"
 #include "base/iconprovider.h"
 #include "base/logger.h"
 #include "base/net/downloadmanager.h"
@@ -428,7 +430,7 @@ void Application::processParams(const QStringList &params)
     BitTorrent::AddTorrentParams torrentParams;
     TriStateBool skipTorrentDialog;
 
-    foreach (QString param, params) {
+    for (QString param : params) {
         param = param.trimmed();
 
         // Process strings indicating options specified by the user.
@@ -495,26 +497,42 @@ int Application::exec(const QStringList &params)
     GuiIconProvider::initInstance();
 #endif
 
-    BitTorrent::Session::initInstance();
-    connect(BitTorrent::Session::instance(), &BitTorrent::Session::torrentFinished, this, &Application::torrentFinished);
-    connect(BitTorrent::Session::instance(), &BitTorrent::Session::allTorrentsFinished, this, &Application::allTorrentsFinished, Qt::QueuedConnection);
+    try {
+        BitTorrent::Session::initInstance();
+        connect(BitTorrent::Session::instance(), &BitTorrent::Session::torrentFinished, this, &Application::torrentFinished);
+        connect(BitTorrent::Session::instance(), &BitTorrent::Session::allTorrentsFinished, this, &Application::allTorrentsFinished, Qt::QueuedConnection);
 
 #ifndef DISABLE_COUNTRIES_RESOLUTION
-    Net::GeoIPManager::initInstance();
+        Net::GeoIPManager::initInstance();
 #endif
-    ScanFoldersModel::initInstance(this);
+        ScanFoldersModel::initInstance(this);
 
 #ifndef DISABLE_WEBUI
-    m_webui = new WebUI;
+        m_webui = new WebUI;
 #ifdef DISABLE_GUI
-    if (m_webui->isErrored())
-        return 1;
-    connect(m_webui, &WebUI::fatalError, this, []() { QCoreApplication::exit(1); });
+        if (m_webui->isErrored())
+            return 1;
+        connect(m_webui, &WebUI::fatalError, this, []() { QCoreApplication::exit(1); });
 #endif // DISABLE_GUI
 #endif // DISABLE_WEBUI
 
-    new RSS::Session; // create RSS::Session singleton
-    new RSS::AutoDownloader; // create RSS::AutoDownloader singleton
+        new RSS::Session; // create RSS::Session singleton
+        new RSS::AutoDownloader; // create RSS::AutoDownloader singleton
+    }
+    catch (const RuntimeError &err) {
+#ifdef DISABLE_GUI
+        fprintf(stderr, "%s", err.what());
+#else
+        QMessageBox msgBox;
+        msgBox.setIcon(QMessageBox::Critical);
+        msgBox.setText(tr("Application failed to start."));
+        msgBox.setInformativeText(err.message());
+        msgBox.show(); // Need to be shown or to moveToCenter does not work
+        msgBox.move(Utils::Misc::screenCenter(&msgBox));
+        msgBox.exec();
+#endif
+        return 1;
+    }
 
 #ifdef DISABLE_GUI
 #ifndef DISABLE_WEBUI
@@ -522,12 +540,12 @@ int Application::exec(const QStringList &params)
     // Display some information to the user
     const QString mesg = QString("\n******** %1 ********\n").arg(tr("Information"))
         + tr("To control qBittorrent, access the Web UI at %1")
-            .arg(QString("http://localhost:") + QString::number(pref->getWebUiPort())) + '\n'
-        + tr("The Web UI administrator user name is: %1").arg(pref->getWebUiUsername()) + '\n';
+            .arg(QString("http://localhost:") + QString::number(pref->getWebUiPort())) + '\n';
     printf("%s", qUtf8Printable(mesg));
-    qDebug() << "Password:" << pref->getWebUiPassword();
-    if (pref->getWebUiPassword() == "f6fdffe48c908deb0f4c3bd36c032e72") {
-        const QString warning = tr("The Web UI administrator password is still the default one: %1").arg("adminadmin") + '\n'
+
+    if (pref->getWebUIPassword() == "ARQ77eY1NUZaQsuDHbIMCA==:0WMRkYTUWVT9wVvdDtHAjU9b3b7uB8NR1Gur2hmQCvCDpm39Q+PsJRJPaCU51dEiz+dTzh8qbPsL8WkFljQYFQ==") {
+        const QString warning = tr("The Web UI administrator username is: %1").arg(pref->getWebUiUsername()) + '\n'
+            + tr("The Web UI administrator password is still the default one: %1").arg("adminadmin") + '\n'
             + tr("This is a security risk, please consider changing your password from program preferences.") + '\n';
         printf("%s", qUtf8Printable(warning));
     }

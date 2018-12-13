@@ -44,6 +44,8 @@
 #include <Carbon/Carbon.h>
 #endif
 
+#include <openssl/opensslv.h>
+
 #include <QByteArray>
 #include <QDebug>
 #include <QFileInfo>
@@ -66,7 +68,7 @@
 #if defined(Q_OS_UNIX) && !defined(Q_OS_MAC)
 #include "base/utils/version.h"
 #endif
-#endif
+#endif // DISABLE_GUI
 
 #include "base/logger.h"
 #include "base/unicodestrings.h"
@@ -391,7 +393,7 @@ QString Utils::Misc::getUserIDString()
 QStringList Utils::Misc::toStringList(const QList<bool> &l)
 {
     QStringList ret;
-    foreach (const bool &b, l)
+    for (const bool b : l)
         ret << (b ? "1" : "0");
     return ret;
 }
@@ -399,7 +401,7 @@ QStringList Utils::Misc::toStringList(const QList<bool> &l)
 QList<int> Utils::Misc::intListfromStringList(const QStringList &l)
 {
     QList<int> ret;
-    foreach (const QString &s, l)
+    for (const QString &s : l)
         ret << s.toInt();
     return ret;
 }
@@ -407,7 +409,7 @@ QList<int> Utils::Misc::intListfromStringList(const QStringList &l)
 QList<bool> Utils::Misc::boolListfromStringList(const QStringList &l)
 {
     QList<bool> ret;
-    foreach (const QString &s, l)
+    for (const QString &s : l)
         ret << (s == "1");
     return ret;
 }
@@ -575,6 +577,12 @@ QString Utils::Misc::libtorrentVersionString()
     // static initialization for usage in signal handler
     static const QString ver = LIBTORRENT_VERSION;
     return ver;
+}
+
+QString Utils::Misc::opensslVersionString()
+{
+    const QString version {OPENSSL_VERSION_TEXT};
+    return version.split(' ', QString::SkipEmptyParts)[1];
 }
 
 #ifdef Q_OS_WIN

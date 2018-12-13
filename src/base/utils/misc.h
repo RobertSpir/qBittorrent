@@ -78,6 +78,7 @@ namespace Utils
         QString osName();
         QString boostVersionString();
         QString libtorrentVersionString();
+        QString opensslVersionString();
 
         QString unitString(SizeUnit unit, bool isSpeed = false);
 
@@ -124,7 +125,7 @@ namespace Utils
             return reinterpret_cast<T>(
                 ::GetProcAddress(::LoadLibraryW(pathWchar.get()), funcName));
         }
-#endif
+#endif // Q_OS_WIN
     }
 }
 

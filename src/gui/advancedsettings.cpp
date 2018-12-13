@@ -36,6 +36,7 @@
 #include <QNetworkInterface>
 
 #include "base/bittorrent/session.h"
+#include "base/global.h"
 #include "base/preferences.h"
 #include "base/unicodestrings.h"
 #include "app/application.h"
@@ -83,6 +84,7 @@ enum AdvSettingsRows
 #if LIBTORRENT_VERSION_NUM >= 10100
     ASYNC_IO_THREADS,
 #endif
+    CHECKING_MEM_USAGE,
     // cache
     DISK_CACHE,
     DISK_CACHE_TTL,
@@ -152,6 +154,8 @@ void AdvancedSettings::saveAdvancedSettings()
     // Async IO threads
     session->setAsyncIOThreads(spinBoxAsyncIOThreads.value());
 #endif
+    // Checking Memory Usage
+    session->setCheckingMemUsage(spinBoxCheckingMemUsage.value());
     // Disk write cache
     session->setDiskCacheSize(spinBoxCache.value());
     session->setDiskCacheTTL(spinBoxCacheTTL.value());
@@ -286,13 +290,13 @@ void AdvancedSettings::updateInterfaceAddressCombo()
     };
 
     if (ifaceName.isEmpty()) {
-        foreach (const QHostAddress &ip, QNetworkInterface::allAddresses())
+        for (const QHostAddress &ip : asConst(QNetworkInterface::allAddresses()))
             populateCombo(ip.toString(), ip.protocol());
     }
     else {
         const QNetworkInterface iface = QNetworkInterface::interfaceFromName(ifaceName);
         const QList<QNetworkAddressEntry> addresses = iface.addressEntries();
-        foreach (const QNetworkAddressEntry &entry, addresses) {
+        for (const QNetworkAddressEntry &entry : addresses) {
             const QHostAddress ip = entry.ip();
             populateCombo(ip.toString(), ip.protocol());
         }
@@ -325,6 +329,13 @@ void AdvancedSettings::loadAdvancedSettings()
     spinBoxAsyncIOThreads.setValue(session->asyncIOThreads());
     addRow(ASYNC_IO_THREADS, tr("Asynchronous I/O threads"), &spinBoxAsyncIOThreads);
 #endif
+
+    // Checking Memory Usage
+    spinBoxCheckingMemUsage.setMinimum(1);
+    spinBoxCheckingMemUsage.setValue(session->checkingMemUsage());
+    spinBoxCheckingMemUsage.setSuffix(tr(" MiB"));
+    addRow(CHECKING_MEM_USAGE, tr("Outstanding memory when checking torrents"), &spinBoxCheckingMemUsage);
+
     // Disk write cache
     spinBoxCache.setMinimum(-1);
     // When build as 32bit binary, set the maximum at less than 2GB to prevent crashes.
@@ -425,7 +436,7 @@ void AdvancedSettings::loadAdvancedSettings()
     const QString currentInterface = session->networkInterface();
     bool interfaceExists = currentInterface.isEmpty();
     int i = 1;
-    foreach (const QNetworkInterface& iface, QNetworkInterface::allInterfaces()) {
+    for (const QNetworkInterface &iface : asConst(QNetworkInterface::allInterfaces())) {
         // This line fixes a Qt bug => https://bugreports.qt.io/browse/QTBUG-52633
         // Tested in Qt 5.6.0. For more info see:
         // https://github.com/qbittorrent/qBittorrent/issues/5131

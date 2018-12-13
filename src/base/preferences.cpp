@@ -29,7 +29,6 @@
 
 #include "preferences.h"
 
-#include <QCryptographicHash>
 #include <QDir>
 #include <QLocale>
 #include <QMutableListIterator>
@@ -50,6 +49,7 @@
 #include <CoreServices/CoreServices.h>
 #endif
 
+#include "global.h"
 #include "logger.h"
 #include "settingsstorage.h"
 #include "utils/fs.h"
@@ -212,7 +212,7 @@ void Preferences::setCloseToTrayNotified(bool b)
 {
     setValue("Preferences/General/CloseToTrayNotified", b);
 }
-#endif
+#endif // Q_OS_MAC
 
 bool Preferences::isToolbarDisplayed() const
 {
@@ -515,7 +515,7 @@ void Preferences::setWebUiAuthSubnetWhitelistEnabled(bool enabled)
 QList<Utils::Net::Subnet> Preferences::getWebUiAuthSubnetWhitelist() const
 {
     QList<Utils::Net::Subnet> subnets;
-    foreach (const QString &rawSubnet, value("Preferences/WebUI/AuthSubnetWhitelist").toStringList()) {
+    for (const QString &rawSubnet : asConst(value("Preferences/WebUI/AuthSubnetWhitelist").toStringList())) {
         bool ok = false;
         const Utils::Net::Subnet subnet = Utils::Net::parseSubnet(rawSubnet.trimmed(), &ok);
         if (ok)
@@ -592,28 +592,16 @@ void Preferences::setWebUiUsername(const QString &username)
     setValue("Preferences/WebUI/Username", username);
 }
 
-QString Preferences::getWebUiPassword() const
+QByteArray Preferences::getWebUIPassword() const
 {
-    QString passHa1 = value("Preferences/WebUI/Password_ha1").toString();
-    if (passHa1.isEmpty()) {
-        QCryptographicHash md5(QCryptographicHash::Md5);
-        md5.addData("adminadmin");
-        passHa1 = md5.result().toHex();
-    }
-    return passHa1;
+    // default: adminadmin
+    const QByteArray defaultValue = "ARQ77eY1NUZaQsuDHbIMCA==:0WMRkYTUWVT9wVvdDtHAjU9b3b7uB8NR1Gur2hmQCvCDpm39Q+PsJRJPaCU51dEiz+dTzh8qbPsL8WkFljQYFQ==";
+    return value("Preferences/WebUI/Password_PBKDF2", defaultValue).toByteArray();
 }
 
-void Preferences::setWebUiPassword(const QString &newPassword)
+void Preferences::setWebUIPassword(const QByteArray &password)
 {
-    // Do not overwrite current password with its hash
-    if (newPassword == getWebUiPassword())
-        return;
-
-    // Encode to md5 and save
-    QCryptographicHash md5(QCryptographicHash::Md5);
-    md5.addData(newPassword.toLocal8Bit());
-
-    setValue("Preferences/WebUI/Password_ha1", md5.result().toHex());
+    setValue("Preferences/WebUI/Password_PBKDF2", password);
 }
 
 bool Preferences::isWebUiClickjackingProtectionEnabled() const
@@ -747,22 +735,14 @@ void Preferences::setDynDNSPassword(const QString &password)
 }
 
 // Advanced settings
-void Preferences::clearUILockPassword()
+QByteArray Preferences::getUILockPassword() const
 {
-    setValue("Locking/password", QString());
+    return value("Locking/password_PBKDF2").toByteArray();
 }
 
-QString Preferences::getUILockPasswordMD5() const
+void Preferences::setUILockPassword(const QByteArray &password)
 {
-    return value("Locking/password").toString();
-}
-
-void Preferences::setUILockPassword(const QString &clearPassword)
-{
-    QCryptographicHash md5(QCryptographicHash::Md5);
-    md5.addData(clearPassword.toLocal8Bit());
-    QString md5Password = md5.result().toHex();
-    setValue("Locking/password", md5Password);
+    setValue("Locking/password_PBKDF2", password);
 }
 
 bool Preferences::isUILocked() const
@@ -977,7 +957,7 @@ void Preferences::setMagnetLinkAssoc(bool set)
 
     SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, 0, 0);
 }
-#endif
+#endif // Q_OS_WIN
 
 #ifdef Q_OS_MAC
 namespace
@@ -1033,7 +1013,7 @@ void Preferences::setMagnetLinkAssoc()
     CFStringRef myBundleId = CFBundleGetIdentifier(CFBundleGetMainBundle());
     LSSetDefaultHandlerForURLScheme(magnetUrlScheme, myBundleId);
 }
-#endif
+#endif // Q_OS_MAC
 
 int Preferences::getTrackerPort() const
 {
@@ -1436,8 +1416,8 @@ void Preferences::setToolbarTextPosition(const int position)
 QList<QNetworkCookie> Preferences::getNetworkCookies() const
 {
     QList<QNetworkCookie> cookies;
-    QStringList rawCookies = value("Network/Cookies").toStringList();
-    foreach (const QString &rawCookie, rawCookies)
+    const QStringList rawCookies = value("Network/Cookies").toStringList();
+    for (const QString &rawCookie : rawCookies)
         cookies << QNetworkCookie::parseCookies(rawCookie.toUtf8());
 
     return cookies;
@@ -1446,7 +1426,7 @@ QList<QNetworkCookie> Preferences::getNetworkCookies() const
 void Preferences::setNetworkCookies(const QList<QNetworkCookie> &cookies)
 {
     QStringList rawCookies;
-    foreach (const QNetworkCookie &cookie, cookies)
+    for (const QNetworkCookie &cookie : cookies)
         rawCookies << cookie.toRawForm();
 
     setValue("Network/Cookies", rawCookies);
@@ -1487,10 +1467,10 @@ void Preferences::upgrade()
 {
     SettingsStorage *settingsStorage = SettingsStorage::instance();
 
-    QStringList labels = value("TransferListFilters/customLabels").toStringList();
+    const QStringList labels = value("TransferListFilters/customLabels").toStringList();
     if (!labels.isEmpty()) {
         QVariantMap categories = value("BitTorrent/Session/Categories").toMap();
-        foreach (const QString &label, labels) {
+        for (const QString &label : labels) {
             if (!categories.contains(label))
                 categories[label] = "";
         }

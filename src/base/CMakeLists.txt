@@ -4,6 +4,7 @@ add_library(qbt_base STATIC
 # headers
 bittorrent/addtorrentparams.h
 bittorrent/cachestatus.h
+bittorrent/filepriority.h
 bittorrent/infohash.h
 bittorrent/magneturi.h
 bittorrent/peerinfo.h
@@ -54,6 +55,7 @@ utils/fs.h
 utils/gzip.h
 utils/misc.h
 utils/net.h
+utils/password.h
 utils/random.h
 utils/string.h
 utils/version.h
@@ -76,6 +78,7 @@ types.h
 unicodestrings.h
 
 # sources
+bittorrent/filepriority.cpp
 bittorrent/infohash.cpp
 bittorrent/magneturi.cpp
 bittorrent/peerinfo.cpp
@@ -123,6 +126,7 @@ utils/fs.cpp
 utils/gzip.cpp
 utils/misc.cpp
 utils/net.cpp
+utils/password.cpp
 utils/random.cpp
 utils/string.cpp
 asyncfilestorage.cpp

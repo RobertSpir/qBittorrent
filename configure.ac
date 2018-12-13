@@ -8,6 +8,10 @@ AC_LANG(C++)
 AC_CANONICAL_HOST
 AM_INIT_AUTOMAKE
 
+# use compiler from env variables if available
+QBT_CC="$CC"
+QBT_CXX="$CXX"
+
 # Define --wth-* and --enable-* arguments
 
 AC_ARG_WITH(qtsingleapplication,
@@ -195,6 +199,11 @@ PKG_CHECK_MODULES(libtorrent,
                   [CXXFLAGS="$libtorrent_CFLAGS $CXXFLAGS"
                   LIBS="$libtorrent_LIBS $LIBS"])
 
+PKG_CHECK_MODULES(openssl,
+                  [openssl >= 1.0],
+                  [CXXFLAGS="$openssl_CFLAGS $CXXFLAGS"
+                  LIBS="$openssl_LIBS $LIBS"])
+
 PKG_CHECK_MODULES(zlib,
                  [zlib >= 1.2.5.2],
                  [CXXFLAGS="$zlib_CFLAGS $CXXFLAGS"
@@ -207,7 +216,7 @@ AC_COMPILE_IFELSE([DETECT_CPP11_PROGRAM()],
                    QBT_CXX11_FOUND="yes"],
                   [AC_MSG_RESULT([no])
                    QBT_CXX11_FOUND="no"])
-                  
+
 # In case of no, check if the compiler can support at least C++11
 # and if yes, enable it leaving a warning to the user
 AS_IF([test "x$QBT_CXX11_FOUND" = "xno"],
@@ -270,6 +279,8 @@ extract "$CFLAGS $CXXFLAGS"
 QBT_ADD_DEFINES="$QBT_ADD_DEFINES $QBT_CONF_DEFINES"
 
 # Substitute the values of these vars in conf.pri.in
+AC_SUBST(QBT_CC)
+AC_SUBST(QBT_CXX)
 AC_SUBST(QBT_CONF_INCLUDES)
 AC_SUBST(QBT_CONF_EXTRA_CFLAGS)
 AC_SUBST(QBT_ADD_CONFIG)
