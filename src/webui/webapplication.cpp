@@ -199,10 +199,6 @@ void WebApplication::translateDocument(QString &data)
 {
     const QRegularExpression regex("QBT_TR\\((([^\\)]|\\)(?!QBT_TR))+)\\)QBT_TR\\[CONTEXT=([a-zA-Z_][a-zA-Z0-9_]*)\\]");
 
-    const bool isTranslationNeeded = !m_currentLocale.startsWith("en")
-            || m_currentLocale.startsWith("en_AU") || m_currentLocale.startsWith("en_GB")
-            || !m_translator.isEmpty();
-
     int i = 0;
     bool found = true;
     while (i < data.size() && found) {
@@ -212,12 +208,12 @@ void WebApplication::translateDocument(QString &data)
             const QString sourceText = regexMatch.captured(1);
             const QString context = regexMatch.captured(3);
 
-            QString translation = sourceText;
-            if (isTranslationNeeded) {
-                const QString loadedText = m_translator.translate(context.toUtf8().constData(), sourceText.toUtf8().constData(), nullptr, 1);
-                if (!loadedText.isEmpty())
-                    translation = loadedText;
-            }
+            const QString loadedText = m_translationFileLoaded
+                ? m_translator.translate(context.toUtf8().constData(), sourceText.toUtf8().constData())
+                : QString();
+            // `loadedText` is empty when translation is not provided
+            // it should fallback to `sourceText`
+            QString translation = loadedText.isEmpty() ? sourceText : loadedText;
 
             // Use HTML code for quotes to prevent issues with JS
             translation.replace('\'', "&#39;");
@@ -436,13 +432,14 @@ void WebApplication::configure()
     if (m_currentLocale != newLocale) {
         m_currentLocale = newLocale;
         m_translatedFiles.clear();
-        if (m_translator.load(m_rootFolder + QLatin1String("/translations/webui_") + m_currentLocale)) {
-            LogMsg(tr("Web UI translation for selected locale (%1) is successfully loaded.")
-                   .arg(m_currentLocale));
+
+        m_translationFileLoaded = m_translator.load(m_rootFolder + QLatin1String("/translations/webui_") + newLocale);
+        if (m_translationFileLoaded) {
+            LogMsg(tr("Web UI translation for selected locale (%1) has been successfully loaded.")
+                   .arg(newLocale));
         }
         else {
-            LogMsg(tr("Couldn't load Web UI translation for selected locale (%1). Falling back to default (en).")
-                   .arg(m_currentLocale), Log::WARNING);
+            LogMsg(tr("Couldn't load Web UI translation for selected locale (%1).").arg(newLocale), Log::WARNING);
         }
     }
 
@@ -457,6 +454,13 @@ void WebApplication::configure()
     m_isCSRFProtectionEnabled = pref->isWebUiCSRFProtectionEnabled();
     m_isHostHeaderValidationEnabled = pref->isWebUIHostHeaderValidationEnabled();
     m_isHttpsEnabled = pref->isWebUiHttpsEnabled();
+
+    m_contentSecurityPolicy =
+        (m_isAltUIUsed
+            ? QLatin1String("")
+            : QLatin1String("default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; script-src 'self' 'unsafe-inline'; object-src 'none'; form-action 'self';"))
+        + (m_isClickjackingProtectionEnabled ? QLatin1String(" frame-ancestors 'self';") : QLatin1String(""))
+        + (m_isHttpsEnabled ? QLatin1String(" upgrade-insecure-requests;") : QLatin1String(""));
 }
 
 void WebApplication::registerAPIController(const QString &scope, APIController *controller)
@@ -559,19 +563,17 @@ Http::Response WebApplication::processRequest(const Http::Request &request, cons
             print(error.message(), Http::CONTENT_TYPE_TXT);
     }
 
-    header(Http::HEADER_X_XSS_PROTECTION, "1; mode=block");
-    header(Http::HEADER_X_CONTENT_TYPE_OPTIONS, "nosniff");
+    header(QLatin1String(Http::HEADER_X_XSS_PROTECTION), QLatin1String("1; mode=block"));
+    header(QLatin1String(Http::HEADER_X_CONTENT_TYPE_OPTIONS), QLatin1String("nosniff"));
 
-    QString csp = QLatin1String("default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; script-src 'self' 'unsafe-inline'; object-src 'none'; form-action 'self';");
-    if (m_isClickjackingProtectionEnabled) {
-        header(Http::HEADER_X_FRAME_OPTIONS, "SAMEORIGIN");
-        csp += QLatin1String(" frame-ancestors 'self';");
-    }
-    if (m_isHttpsEnabled) {
-        csp += QLatin1String(" upgrade-insecure-requests;");
-    }
+    if (m_isClickjackingProtectionEnabled)
+        header(QLatin1String(Http::HEADER_X_FRAME_OPTIONS), QLatin1String("SAMEORIGIN"));
 
-    header(Http::HEADER_CONTENT_SECURITY_POLICY, csp);
+    if (!m_isAltUIUsed)
+        header(QLatin1String(Http::HEADER_REFERRER_POLICY), QLatin1String("same-origin"));
+
+    if (!m_contentSecurityPolicy.isEmpty())
+        header(QLatin1String(Http::HEADER_CONTENT_SECURITY_POLICY), m_contentSecurityPolicy);
 
     return response();
 }

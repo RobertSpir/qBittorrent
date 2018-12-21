@@ -146,6 +146,7 @@ private:
     QMap<QString, TranslatedFile> m_translatedFiles;
     QString m_currentLocale;
     QTranslator m_translator;
+    bool m_translationFileLoaded = false;
 
     bool m_isLocalAuthEnabled;
     bool m_isAuthSubnetWhitelistEnabled;
@@ -157,4 +158,5 @@ private:
     bool m_isCSRFProtectionEnabled;
     bool m_isHostHeaderValidationEnabled;
     bool m_isHttpsEnabled;
+    QString m_contentSecurityPolicy;
 };
