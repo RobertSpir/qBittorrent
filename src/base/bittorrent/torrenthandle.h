@@ -30,6 +30,8 @@
 #ifndef BITTORRENT_TORRENTHANDLE_H
 #define BITTORRENT_TORRENTHANDLE_H
 
+#include <functional>
+
 #include <QDateTime>
 #include <QHash>
 #include <QObject>
@@ -43,8 +45,6 @@
 #if LIBTORRENT_VERSION_NUM >= 10100
 #include <libtorrent/torrent_status.hpp>
 #endif
-
-#include <boost/function.hpp>
 
 #include "base/tristatebool.h"
 #include "private/speedmonitor.h"
@@ -113,7 +113,7 @@ namespace BitTorrent
         int seedingTimeLimit;
 
         CreateTorrentParams();
-        CreateTorrentParams(const AddTorrentParams &params);
+        explicit CreateTorrentParams(const AddTorrentParams &params);
     };
 
     struct TrackerInfo
@@ -384,7 +384,7 @@ namespace BitTorrent
         QVector<qreal> availableFileFractions() const;
 
     private:
-        typedef boost::function<void ()> EventTrigger;
+        typedef std::function<void ()> EventTrigger;
 
         void updateStatus();
         void updateStatus(const libtorrent::torrent_status &nativeStatus);

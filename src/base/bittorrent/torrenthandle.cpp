@@ -49,8 +49,6 @@
 #include <libtorrent/time.hpp>
 #endif
 
-#include <boost/bind.hpp>
-
 #ifdef Q_OS_WIN
 #include <windows.h>
 #endif
@@ -224,7 +222,7 @@ TorrentHandle::TorrentHandle(Session *session, const libtorrent::torrent_handle 
     if (params.paused) {
         m_startupState = Started;
     }
-    else if (!params.restored) {
+    else if (!params.restored || !hasMetadata()) {
         // Resume torrent because it was added in "resumed" state
         // but it's actually paused during initialization
         m_startupState = Starting;
@@ -1600,8 +1598,8 @@ void TorrentHandle::handleTorrentFinishedAlert(const libtorrent::torrent_finishe
     const bool recheckTorrentsOnCompletion = Preferences::instance()->recheckTorrentsOnCompletion();
     if (isMoveInProgress() || (m_renameCount > 0)) {
         if (recheckTorrentsOnCompletion)
-            m_moveFinishedTriggers.append(boost::bind(&TorrentHandle::forceRecheck, this));
-        m_moveFinishedTriggers.append(boost::bind(&Session::handleTorrentFinished, m_session, this));
+            m_moveFinishedTriggers.append([this]() { forceRecheck(); });
+        m_moveFinishedTriggers.append([this]() { m_session->handleTorrentFinished(this); });
     }
     else {
         if (recheckTorrentsOnCompletion && m_unchecked)
@@ -1894,7 +1892,7 @@ void TorrentHandle::adjustActualSavePath()
     if (!isMoveInProgress())
         adjustActualSavePath_impl();
     else
-        m_moveFinishedTriggers.append(boost::bind(&TorrentHandle::adjustActualSavePath_impl, this));
+        m_moveFinishedTriggers.append([this]() { adjustActualSavePath_impl(); });
 }
 
 void TorrentHandle::adjustActualSavePath_impl()
