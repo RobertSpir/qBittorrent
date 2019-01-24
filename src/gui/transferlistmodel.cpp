@@ -344,9 +344,6 @@ QIcon TransferListModel::getIconByState(BitTorrent::TorrentState state)
         return getQueuedIcon();
     case BitTorrent::TorrentState::CheckingDownloading:
     case BitTorrent::TorrentState::CheckingUploading:
-#if LIBTORRENT_VERSION_NUM < 10100
-    case BitTorrent::TorrentState::QueuedForChecking:
-#endif
     case BitTorrent::TorrentState::CheckingResumeData:
     case BitTorrent::TorrentState::Moving:
         return getCheckingIcon();
@@ -403,9 +400,6 @@ QColor getColorByState(BitTorrent::TorrentState state, qreal ratio)
     case BitTorrent::TorrentState::QueuedUploading:
     case BitTorrent::TorrentState::CheckingDownloading:
     case BitTorrent::TorrentState::CheckingUploading:
-#if LIBTORRENT_VERSION_NUM < 10100
-    case BitTorrent::TorrentState::QueuedForChecking:
-#endif
     case BitTorrent::TorrentState::CheckingResumeData:
     case BitTorrent::TorrentState::Moving:
         if (!dark)

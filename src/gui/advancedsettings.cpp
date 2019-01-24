@@ -81,18 +81,14 @@ enum AdvSettingsRows
 
     // libtorrent section
     LIBTORRENT_HEADER,
-#if LIBTORRENT_VERSION_NUM >= 10100
     ASYNC_IO_THREADS,
-#endif
     CHECKING_MEM_USAGE,
     // cache
     DISK_CACHE,
     DISK_CACHE_TTL,
     OS_CACHE,
     GUIDED_READ_CACHE,
-#if LIBTORRENT_VERSION_NUM >= 10107
     COALESCE_RW,
-#endif
     SUGGEST_MODE,
     SEND_BUF_WATERMARK,
     SEND_BUF_LOW_WATERMARK,
@@ -150,10 +146,8 @@ void AdvancedSettings::saveAdvancedSettings()
     Preferences *const pref = Preferences::instance();
     BitTorrent::Session *const session = BitTorrent::Session::instance();
 
-#if LIBTORRENT_VERSION_NUM >= 10100
     // Async IO threads
     session->setAsyncIOThreads(spinBoxAsyncIOThreads.value());
-#endif
     // Checking Memory Usage
     session->setCheckingMemUsage(spinBoxCheckingMemUsage.value());
     // Disk write cache
@@ -322,16 +316,21 @@ void AdvancedSettings::loadAdvancedSettings()
     labelLibtorrentLink.setText(QString("<a href=\"%1\">%2</a>").arg("https://www.libtorrent.org/reference.html", tr("Open documentation")));
     labelLibtorrentLink.setOpenExternalLinks(true);
 
-#if LIBTORRENT_VERSION_NUM >= 10100
     // Async IO threads
     spinBoxAsyncIOThreads.setMinimum(1);
     spinBoxAsyncIOThreads.setMaximum(1024);
     spinBoxAsyncIOThreads.setValue(session->asyncIOThreads());
     addRow(ASYNC_IO_THREADS, tr("Asynchronous I/O threads"), &spinBoxAsyncIOThreads);
-#endif
 
     // Checking Memory Usage
     spinBoxCheckingMemUsage.setMinimum(1);
+    // When build as 32bit binary, set the maximum value lower to prevent crashes.
+#ifdef QBT_APP_64BIT
+    spinBoxCheckingMemUsage.setMaximum(1024);
+#else
+    // Allocate at most 128MiB out of the remaining 512MiB (see the cache part below)
+    spinBoxCheckingMemUsage.setMaximum(128);
+#endif
     spinBoxCheckingMemUsage.setValue(session->checkingMemUsage());
     spinBoxCheckingMemUsage.setSuffix(tr(" MiB"));
     addRow(CHECKING_MEM_USAGE, tr("Outstanding memory when checking torrents"), &spinBoxCheckingMemUsage);
@@ -340,7 +339,7 @@ void AdvancedSettings::loadAdvancedSettings()
     spinBoxCache.setMinimum(-1);
     // When build as 32bit binary, set the maximum at less than 2GB to prevent crashes.
     // These macros may not be available on compilers other than MSVC and GCC
-#if defined(__x86_64__) || defined(_M_X64)
+#ifdef QBT_APP_64BIT
     spinBoxCache.setMaximum(4096);
 #else
     // allocate 1536MiB and leave 512MiB to the rest of program data in RAM
@@ -363,9 +362,7 @@ void AdvancedSettings::loadAdvancedSettings()
     addRow(GUIDED_READ_CACHE, tr("Guided read cache"), &checkBoxGuidedReadCache);
     // Coalesce reads & writes
     checkBoxCoalesceRW.setChecked(session->isCoalesceReadWriteEnabled());
-#if LIBTORRENT_VERSION_NUM >= 10107
     addRow(COALESCE_RW, tr("Coalesce reads & writes"), &checkBoxCoalesceRW);
-#endif
     // Suggest mode
     checkBoxSuggestMode.setChecked(session->isSuggestModeEnabled());
     addRow(SUGGEST_MODE, tr("Send upload piece suggestions"), &checkBoxSuggestMode);

@@ -48,11 +48,7 @@ public:
         setAttribute(Qt::WA_DeleteOnClose);
 
         // Title
-#if defined(__x86_64__) || defined(_M_X64)
-        labelName->setText("<b><h2>qBittorrent " QBT_VERSION " (64-bit)</h2></b>");
-#else
-        labelName->setText("<b><h2>qBittorrent " QBT_VERSION " (32-bit)</h2></b>");
-#endif
+        labelName->setText(QString("<b><h2>qBittorrent " QBT_VERSION " (%1-bit)</h2></b>").arg(QT_POINTER_SIZE * 8));
 
         logo->setPixmap(Utils::Gui::scaledPixmapSvg(":/icons/skin/qbittorrent-tray.svg", this, 32));
 
@@ -68,7 +64,7 @@ public:
             "</table>"
             "</p>")
             .arg(tr("An advanced BitTorrent client programmed in C++, based on Qt toolkit and libtorrent-rasterbar.")
-                , tr("Copyright %1 2006-2018 The qBittorrent project").arg(QString::fromUtf8(C_COPYRIGHT))
+                , tr("Copyright %1 2006-2019 The qBittorrent project").arg(QString::fromUtf8(C_COPYRIGHT))
                 , tr("Home Page:")
                 , tr("Forum:")
                 , tr("Bug Tracker:"));
