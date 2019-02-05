@@ -2170,9 +2170,6 @@ void MainWindow::updateTaskbar(BitTorrent::TorrentHandle* torrent)
             break;
         case BitTorrent::TorrentState::CheckingDownloading:
         case BitTorrent::TorrentState::CheckingUploading:
-#if LIBTORRENT_VERSION_NUM < 10100
-        case BitTorrent::TorrentState::QueuedForChecking:
-#endif
         case BitTorrent::TorrentState::CheckingResumeData:
             m_taskbarButton->progress()->setMaximum(0);
             m_taskbarButton->progress()->setVisible(true);
