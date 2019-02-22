@@ -83,7 +83,7 @@ namespace
         case SearchJobWidget::Status::NoResults:
             return QLatin1String("task-attention");
         default:
-            return QString();
+            return {};
         }
     }
 }
@@ -280,7 +280,7 @@ void SearchWidget::on_pluginsButton_clicked()
     new PluginSelectDialog(SearchPluginManager::instance(), this);
 }
 
-void SearchWidget::searchTextEdited(QString)
+void SearchWidget::searchTextEdited(const QString &)
 {
     // Enable search button
     m_ui->searchButton->setText(tr("Search"));

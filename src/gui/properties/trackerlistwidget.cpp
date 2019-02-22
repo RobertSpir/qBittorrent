@@ -149,7 +149,7 @@ QList<QTreeWidgetItem*> TrackerListWidget::getSelectedTrackerItems() const
     return selectedTrackers;
 }
 
-void TrackerListWidget::setRowColor(int row, QColor color)
+void TrackerListWidget::setRowColor(const int row, const QColor &color)
 {
     const int nbColumns = columnCount();
     QTreeWidgetItem *item = topLevelItem(row);
@@ -466,8 +466,7 @@ void TrackerListWidget::editSelectedTracker()
 
     QList<BitTorrent::TrackerEntry> trackers = torrent->trackers();
     bool match = false;
-    for (int i = 0; i < trackers.size(); ++i) {
-        BitTorrent::TrackerEntry &entry = trackers[i];
+    for (auto &entry : trackers) {
         if (newTrackerURL == QUrl(entry.url())) {
             QMessageBox::warning(this, tr("Tracker editing failed"), tr("The tracker URL already exists."));
             return;

@@ -101,7 +101,7 @@ namespace
     QSize CheckBoxIconHelper::sizeHint() const
     {
         const int dim = QCheckBox::sizeHint().height();
-        return QSize(dim, dim);
+        return {dim, dim};
     }
 
     void CheckBoxIconHelper::initStyleOption(QStyleOptionButton *opt) const
@@ -153,7 +153,7 @@ namespace
         }
         m_checkBoxOffset.setWidth(layoutPadding.width());
 
-        QHBoxLayout *layout = new QHBoxLayout(this);
+        auto *layout = new QHBoxLayout(this);
         layout->addWidget(m_checkBox);
         layout->addStretch();
         layout->setContentsMargins(layoutPadding.width(), layoutPadding.height(), layoutPadding.width(), layoutPadding.height());
@@ -341,7 +341,7 @@ TransferListModel *TransferListWidget::getSourceModel() const
     return m_listModel;
 }
 
-void TransferListWidget::previewFile(QString filePath)
+void TransferListWidget::previewFile(const QString &filePath)
 {
     Utils::Misc::openPath(filePath);
 }
@@ -815,7 +815,7 @@ QStringList TransferListWidget::askTagsForSelection(const QString &dialogTitle)
         const QString tagsInput = AutoExpandableDialog::getText(
             this, dialogTitle, tr("Comma-separated tags:"), QLineEdit::Normal, "", &ok).trimmed();
         if (!ok || tagsInput.isEmpty())
-            return QStringList();
+            return {};
         tags = tagsInput.split(',', QString::SkipEmptyParts);
         for (QString &tag : tags) {
             tag = tag.trimmed();
@@ -857,7 +857,7 @@ void TransferListWidget::renameSelectedTorrent()
     }
 }
 
-void TransferListWidget::setSelectionCategory(QString category)
+void TransferListWidget::setSelectionCategory(const QString &category)
 {
     for (const QModelIndex &index : asConst(selectionModel()->selectedRows()))
         m_listModel->setData(m_listModel->index(mapToSource(index).row(), TransferListModel::TR_CATEGORY), category, Qt::DisplayRole);
@@ -881,7 +881,7 @@ void TransferListWidget::clearSelectionTags()
 void TransferListWidget::displayListMenu(const QPoint&)
 {
     const QModelIndexList selectedIndexes = selectionModel()->selectedRows();
-    if (selectedIndexes.size() == 0) return;
+    if (selectedIndexes.isEmpty()) return;
 
     // Create actions
     QAction actionStart(GuiIconProvider::instance()->getIcon("media-playback-start"), tr("Resume", "Resume/start the torrent"), nullptr);
@@ -1176,7 +1176,7 @@ void TransferListWidget::currentChanged(const QModelIndex &current, const QModel
     emit currentTorrentChanged(torrent);
 }
 
-void TransferListWidget::applyCategoryFilter(QString category)
+void TransferListWidget::applyCategoryFilter(const QString &category)
 {
     if (category.isNull())
         m_sortFilterModel->disableCategoryFilter();

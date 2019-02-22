@@ -206,7 +206,7 @@ MainWindow::MainWindow(QWidget *parent)
     m_ui->menuAutoShutdownOnDownloadsCompletion->setIcon(GuiIconProvider::instance()->getIcon("application-exit"));
     m_ui->actionManageCookies->setIcon(GuiIconProvider::instance()->getIcon("preferences-web-browser-cookies"));
 
-    QMenu *lockMenu = new QMenu(this);
+    auto *lockMenu = new QMenu(this);
     QAction *defineUiLockPasswdAct = lockMenu->addAction(tr("&Set Password"));
     connect(defineUiLockPasswdAct, &QAction::triggered, this, &MainWindow::defineUILockPassword);
     QAction *clearUiLockPasswdAct = lockMenu->addAction(tr("&Clear Password"));
@@ -229,7 +229,7 @@ MainWindow::MainWindow(QWidget *parent)
     m_splitter = new QSplitter(Qt::Horizontal, this);
     // vSplitter->setChildrenCollapsible(false);
 
-    QSplitter *hSplitter = new QSplitter(Qt::Vertical, this);
+    auto *hSplitter = new QSplitter(Qt::Vertical, this);
     hSplitter->setChildrenCollapsible(false);
     hSplitter->setFrameShape(QFrame::NoFrame);
 
@@ -387,7 +387,7 @@ MainWindow::MainWindow(QWidget *parent)
         QTimer::singleShot(0, this, &MainWindow::on_actionSearchWidget_triggered);
 
     // Auto shutdown actions
-    QActionGroup *autoShutdownGroup = new QActionGroup(this);
+    auto *autoShutdownGroup = new QActionGroup(this);
     autoShutdownGroup->setExclusive(true);
     autoShutdownGroup->addAction(m_ui->actionAutoShutdownDisabled);
     autoShutdownGroup->addAction(m_ui->actionAutoExit);
@@ -562,7 +562,7 @@ void MainWindow::addToolbarContextMenu()
     m_toolbarMenu->addAction(textBesideIcons);
     m_toolbarMenu->addAction(textUnderIcons);
     m_toolbarMenu->addAction(followSystemStyle);
-    QActionGroup *textPositionGroup = new QActionGroup(m_toolbarMenu);
+    auto *textPositionGroup = new QActionGroup(m_toolbarMenu);
     textPositionGroup->addAction(iconsOnly);
     iconsOnly->setCheckable(true);
     textPositionGroup->addAction(textOnly);
@@ -574,7 +574,7 @@ void MainWindow::addToolbarContextMenu()
     textPositionGroup->addAction(followSystemStyle);
     followSystemStyle->setCheckable(true);
 
-    const Qt::ToolButtonStyle buttonStyle = static_cast<Qt::ToolButtonStyle>(pref->getToolbarTextPosition());
+    const auto buttonStyle = static_cast<Qt::ToolButtonStyle>(pref->getToolbarTextPosition());
     if ((buttonStyle >= Qt::ToolButtonIconOnly) && (buttonStyle <= Qt::ToolButtonFollowStyle))
         m_ui->toolBar->setToolButtonStyle(buttonStyle);
     switch (buttonStyle) {
@@ -765,9 +765,8 @@ void MainWindow::tabChanged(int newTab)
         m_searchFilterAction->setVisible(true);
         return;
     }
-    else {
-        m_searchFilterAction->setVisible(false);
-    }
+    m_searchFilterAction->setVisible(false);
+
     if (m_tabs->currentWidget() == m_searchWidget) {
         qDebug("Changed tab to search engine, giving focus to search input");
         m_searchWidget->giveFocusToSearchInput();
@@ -803,7 +802,7 @@ void MainWindow::cleanup()
 #endif
 
     // remove all child widgets
-    while (QWidget *w = findChild<QWidget * >())
+    while (auto *w = findChild<QWidget *>())
         delete w;
 }
 
@@ -857,7 +856,7 @@ void MainWindow::finishedTorrent(BitTorrent::TorrentHandle *const torrent) const
 }
 
 // Notification when disk is full
-void MainWindow::fullDiskError(BitTorrent::TorrentHandle *const torrent, QString msg) const
+void MainWindow::fullDiskError(BitTorrent::TorrentHandle *const torrent, const QString &msg) const
 {
     showNotificationBaloon(tr("I/O Error", "i.e: Input/Output Error")
         , tr("An I/O error occurred for torrent '%1'.\n Reason: %2"
@@ -971,7 +970,7 @@ void MainWindow::askRecursiveTorrentDownloadConfirmation(BitTorrent::TorrentHand
     confirmBox->show();
 }
 
-void MainWindow::handleDownloadFromUrlFailure(QString url, QString reason) const
+void MainWindow::handleDownloadFromUrlFailure(const QString &url, const QString &reason) const
 {
     // Display a message box
     showNotificationBaloon(tr("URL download error")
@@ -1069,7 +1068,7 @@ bool MainWindow::unlockUI()
     return true;
 }
 
-void MainWindow::notifyOfUpdate(QString)
+void MainWindow::notifyOfUpdate(const QString &)
 {
     // Show restart message
     m_statusBar->showRestartRequired();
@@ -1603,7 +1602,7 @@ void MainWindow::updateGUI()
     }
 }
 
-void MainWindow::showNotificationBaloon(QString title, QString msg) const
+void MainWindow::showNotificationBaloon(const QString &title, const QString &msg) const
 {
     if (!isNotificationsEnabled()) return;
 #if (defined(Q_OS_UNIX) && !defined(Q_OS_MAC)) && defined(QT_DBUS_LIB)
