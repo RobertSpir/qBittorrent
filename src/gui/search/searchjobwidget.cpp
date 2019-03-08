@@ -35,10 +35,9 @@
 #include <QHeaderView>
 #include <QMenu>
 #include <QPalette>
-#include <QSortFilterProxyModel>
 #include <QStandardItemModel>
 #include <QTableView>
-#include <QTreeView>
+#include <QUrl>
 
 #include "base/bittorrent/session.h"
 #include "base/preferences.h"
@@ -163,6 +162,8 @@ SearchJobWidget::SearchJobWidget(SearchHandler *searchHandler, QWidget *parent)
 
     QShortcut *enterHotkey = new QShortcut(Qt::Key_Return, m_ui->resultsBrowser, nullptr, nullptr, Qt::WidgetShortcut);
     connect(enterHotkey, &QShortcut::activated, this, &SearchJobWidget::downloadTorrents);
+
+    setStatusTip(statusText(m_status));
 }
 
 SearchJobWidget::~SearchJobWidget()

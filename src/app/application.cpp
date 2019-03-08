@@ -41,6 +41,7 @@
 
 #include <QAtomicInt>
 #include <QDebug>
+#include <QDir>
 #include <QLibraryInfo>
 #include <QProcess>
 
@@ -55,6 +56,7 @@
 #endif // Q_OS_MAC
 #include "addnewtorrentdialog.h"
 #include "gui/guiiconprovider.h"
+#include "gui/utils.h"
 #include "mainwindow.h"
 #include "shutdownconfirmdialog.h"
 #else // DISABLE_GUI
@@ -125,6 +127,7 @@ Application::Application(const QString &id, int &argc, char **argv)
     qRegisterMetaType<Log::Msg>("Log::Msg");
 
     setApplicationName("qBittorrent");
+    setOrganizationDomain("qbittorrent.org");
     validateCommandLineParameters();
 
     const QString profileDir = m_commandLineArgs.portableMode
@@ -146,6 +149,7 @@ Application::Application(const QString &id, int &argc, char **argv)
 #if !defined(DISABLE_GUI)
     setAttribute(Qt::AA_UseHighDpiPixmaps, true);  // opt-in to the high DPI pixmap support
     setQuitOnLastWindowClosed(false);
+    setDesktopFileName("org.qbittorrent.qBittorrent");
 #endif
 
 #if defined(Q_OS_WIN) && !defined(DISABLE_GUI)
@@ -529,7 +533,7 @@ int Application::exec(const QStringList &params)
         msgBox.setText(tr("Application failed to start."));
         msgBox.setInformativeText(err.message());
         msgBox.show(); // Need to be shown or to moveToCenter does not work
-        msgBox.move(Utils::Misc::screenCenter(&msgBox));
+        msgBox.move(Utils::Gui::screenCenter(&msgBox));
         msgBox.exec();
 #endif
         return 1;
