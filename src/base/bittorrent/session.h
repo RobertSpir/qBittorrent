@@ -118,6 +118,11 @@ enum TorrentExportFolder
     Finished
 };
 
+namespace Net
+{
+    struct DownloadResult;
+}
+
 namespace BitTorrent
 {
     class InfoHash;
@@ -408,8 +413,6 @@ namespace BitTorrent
         void setSuperSeedingEnabled(bool enabled);
         int maxConnections() const;
         void setMaxConnections(int max);
-        int maxHalfOpenConnections() const;
-        void setMaxHalfOpenConnections(int max);
         int maxConnectionsPerTorrent() const;
         void setMaxConnectionsPerTorrent(int max);
         int maxUploads() const;
@@ -537,9 +540,7 @@ namespace BitTorrent
         void generateResumeData(bool final = false);
         void handleIPFilterParsed(int ruleCount);
         void handleIPFilterError();
-        void handleDownloadFinished(const QString &url, const QByteArray &data);
-        void handleDownloadFailed(const QString &url, const QString &reason);
-        void handleRedirectedToMagnet(const QString &url, const QString &magnetUri);
+        void handleDownloadFinished(const Net::DownloadResult &result);
 
         // Session reconfiguration triggers
         void networkOnlineStateChanged(bool online);
@@ -657,7 +658,6 @@ namespace BitTorrent
         CachedSettingValue<QString> m_announceIP;
         CachedSettingValue<bool> m_isSuperSeedingEnabled;
         CachedSettingValue<int> m_maxConnections;
-        CachedSettingValue<int> m_maxHalfOpenConnections;
         CachedSettingValue<int> m_maxUploads;
         CachedSettingValue<int> m_maxConnectionsPerTorrent;
         CachedSettingValue<int> m_maxUploadsPerTorrent;

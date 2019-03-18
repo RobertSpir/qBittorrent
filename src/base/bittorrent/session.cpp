@@ -67,7 +67,6 @@
 #include "base/exceptions.h"
 #include "base/global.h"
 #include "base/logger.h"
-#include "base/net/downloadhandler.h"
 #include "base/net/downloadmanager.h"
 #include "base/net/portforwarder.h"
 #include "base/net/proxyconfigurationmanager.h"
@@ -288,7 +287,6 @@ Session::Session(QObject *parent)
     , m_announceIP(BITTORRENT_SESSION_KEY("AnnounceIP"))
     , m_isSuperSeedingEnabled(BITTORRENT_SESSION_KEY("SuperSeedingEnabled"), false)
     , m_maxConnections(BITTORRENT_SESSION_KEY("MaxConnections"), 500, lowerLimited(0, -1))
-    , m_maxHalfOpenConnections(BITTORRENT_SESSION_KEY("MaxHalfOpenConnections"), 20, lowerLimited(0, -1))
     , m_maxUploads(BITTORRENT_SESSION_KEY("MaxUploads"), -1, lowerLimited(0, -1))
     , m_maxConnectionsPerTorrent(BITTORRENT_SESSION_KEY("MaxConnectionsPerTorrent"), 100, lowerLimited(0, -1))
     , m_maxUploadsPerTorrent(BITTORRENT_SESSION_KEY("MaxUploadsPerTorrent"), -1, lowerLimited(0, -1))
@@ -1542,22 +1540,21 @@ void Session::processShareLimits()
     }
 }
 
-void Session::handleDownloadFailed(const QString &url, const QString &reason)
-{
-    emit downloadFromUrlFailed(url, reason);
-}
-
-void Session::handleRedirectedToMagnet(const QString &url, const QString &magnetUri)
-{
-    addTorrent_impl(CreateTorrentParams(m_downloadedTorrents.take(url)), MagnetUri(magnetUri));
-}
-
 // Add to BitTorrent session the downloaded torrent file
-void Session::handleDownloadFinished(const QString &url, const QByteArray &data)
+void Session::handleDownloadFinished(const Net::DownloadResult &result)
 {
-    emit downloadFromUrlFinished(url);
-    addTorrent_impl(CreateTorrentParams(m_downloadedTorrents.take(url))
-                    , MagnetUri(), TorrentInfo::load(data));
+    switch (result.status) {
+    case Net::DownloadStatus::Success:
+        emit downloadFromUrlFinished(result.url);
+        addTorrent_impl(CreateTorrentParams(m_downloadedTorrents.take(result.url))
+                        , MagnetUri(), TorrentInfo::load(result.data));
+        break;
+    case Net::DownloadStatus::RedirectedToMagnet:
+        addTorrent_impl(CreateTorrentParams(m_downloadedTorrents.take(result.url)), MagnetUri(result.magnet));
+        break;
+    default:
+        emit downloadFromUrlFailed(result.url, result.errorString);
+    }
 }
 
 // Return the torrent handle, given its hash
@@ -1795,13 +1792,9 @@ bool Session::addTorrent(const QString &source, const AddTorrentParams &params)
     if (Net::DownloadManager::hasSupportedScheme(source)) {
         LogMsg(tr("Downloading '%1', please wait...", "e.g: Downloading 'xxx.torrent', please wait...").arg(source));
         // Launch downloader
-        const Net::DownloadHandler *handler =
-                Net::DownloadManager::instance()->download(Net::DownloadRequest(source).limit(10485760 /* 10MB */).handleRedirectToMagnet(true));
-        connect(handler, static_cast<void (Net::DownloadHandler::*)(const QString &, const QByteArray &)>(&Net::DownloadHandler::downloadFinished)
-                , this, &Session::handleDownloadFinished);
-        connect(handler, &Net::DownloadHandler::downloadFailed, this, &Session::handleDownloadFailed);
-        connect(handler, &Net::DownloadHandler::redirectedToMagnet, this, &Session::handleRedirectedToMagnet);
-        m_downloadedTorrents[handler->url()] = params;
+        Net::DownloadManager::instance()->download(Net::DownloadRequest(source).limit(10485760 /* 10MB */)
+                                                   , this, &Session::handleDownloadFinished);
+        m_downloadedTorrents[source] = params;
         return true;
     }
 
@@ -3115,20 +3108,6 @@ void Session::setMaxConnections(int max)
     max = (max > 0) ? max : -1;
     if (max != m_maxConnections) {
         m_maxConnections = max;
-        configureDeferred();
-    }
-}
-
-int Session::maxHalfOpenConnections() const
-{
-    return m_maxHalfOpenConnections;
-}
-
-void Session::setMaxHalfOpenConnections(int max)
-{
-    max = (max > 0) ? max : -1;
-    if (max != m_maxHalfOpenConnections) {
-        m_maxHalfOpenConnections = max;
         configureDeferred();
     }
 }
