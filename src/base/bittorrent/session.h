@@ -32,17 +32,15 @@
 
 #include <vector>
 
+#include <libtorrent/fwd.hpp>
+
 #include <QElapsedTimer>
 #include <QFile>
 #include <QHash>
 #include <QList>
-#include <QMap>
 #include <QNetworkConfigurationManager>
 #include <QPointer>
 #include <QSet>
-#include <QStringList>
-#include <QVector>
-#include <QWaitCondition>
 
 #include "base/settingvalue.h"
 #include "base/tristatebool.h"
@@ -52,53 +50,10 @@
 #include "sessionstatus.h"
 #include "torrentinfo.h"
 
-namespace libtorrent
-{
-    class session;
-    struct torrent_handle;
-    class entry;
-    struct ip_filter;
-    struct settings_pack;
-
-    class alert;
-    struct torrent_alert;
-    struct state_update_alert;
-    struct stats_alert;
-    struct add_torrent_alert;
-    struct torrent_checked_alert;
-    struct torrent_finished_alert;
-    struct torrent_removed_alert;
-    struct torrent_deleted_alert;
-    struct torrent_delete_failed_alert;
-    struct torrent_paused_alert;
-    struct torrent_resumed_alert;
-    struct save_resume_data_alert;
-    struct save_resume_data_failed_alert;
-    struct file_renamed_alert;
-    struct storage_moved_alert;
-    struct storage_moved_failed_alert;
-    struct metadata_received_alert;
-    struct file_error_alert;
-    struct file_completed_alert;
-    struct tracker_error_alert;
-    struct tracker_reply_alert;
-    struct tracker_warning_alert;
-    struct portmap_error_alert;
-    struct portmap_alert;
-    struct peer_blocked_alert;
-    struct peer_ban_alert;
-    struct fastresume_rejected_alert;
-    struct url_seed_alert;
-    struct listen_succeeded_alert;
-    struct listen_failed_alert;
-    struct external_ip_alert;
-    struct session_stats_alert;
-}
-
 class QThread;
 class QTimer;
-class QStringList;
 class QString;
+class QStringList;
 class QUrl;
 
 class FilterParserThread;
@@ -487,7 +442,7 @@ namespace BitTorrent
         void handleTorrentTrackersChanged(TorrentHandle *const torrent);
         void handleTorrentUrlSeedsAdded(TorrentHandle *const torrent, const QList<QUrl> &newUrlSeeds);
         void handleTorrentUrlSeedsRemoved(TorrentHandle *const torrent, const QList<QUrl> &urlSeeds);
-        void handleTorrentResumeDataReady(TorrentHandle *const torrent, const libtorrent::entry &data);
+        void handleTorrentResumeDataReady(TorrentHandle *const torrent, const lt::entry &data);
         void handleTorrentResumeDataFailed(TorrentHandle *const torrent);
         void handleTorrentTrackerReply(TorrentHandle *const torrent, const QString &trackerUrl);
         void handleTorrentTrackerWarning(TorrentHandle *const torrent, const QString &trackerUrl);
@@ -564,14 +519,14 @@ namespace BitTorrent
 
         // Session configuration
         Q_INVOKABLE void configure();
-        void configure(libtorrent::settings_pack &settingsPack);
+        void configure(lt::settings_pack &settingsPack);
         void configurePeerClasses();
-        void adjustLimits(libtorrent::settings_pack &settingsPack);
-        void applyBandwidthLimits(libtorrent::settings_pack &settingsPack);
+        void adjustLimits(lt::settings_pack &settingsPack);
+        void applyBandwidthLimits(lt::settings_pack &settingsPack);
         void initMetrics();
         void adjustLimits();
         void applyBandwidthLimits();
-        void processBannedIPs(libtorrent::ip_filter &filter);
+        void processBannedIPs(lt::ip_filter &filter);
         const QStringList getListeningIPs();
         void configureListeningInterface();
         void enableTracker(bool enable);
@@ -589,35 +544,35 @@ namespace BitTorrent
         void exportTorrentFile(TorrentHandle *const torrent, TorrentExportFolder folder = TorrentExportFolder::Regular);
         void saveTorrentResumeData(TorrentHandle *const torrent);
 
-        void handleAlert(const libtorrent::alert *a);
-        void dispatchTorrentAlert(const libtorrent::alert *a);
-        void handleAddTorrentAlert(const libtorrent::add_torrent_alert *p);
-        void handleStateUpdateAlert(const libtorrent::state_update_alert *p);
-        void handleMetadataReceivedAlert(const libtorrent::metadata_received_alert *p);
-        void handleFileErrorAlert(const libtorrent::file_error_alert *p);
-        void handleTorrentRemovedAlert(const libtorrent::torrent_removed_alert *p);
-        void handleTorrentDeletedAlert(const libtorrent::torrent_deleted_alert *p);
-        void handleTorrentDeleteFailedAlert(const libtorrent::torrent_delete_failed_alert *p);
-        void handlePortmapWarningAlert(const libtorrent::portmap_error_alert *p);
-        void handlePortmapAlert(const libtorrent::portmap_alert *p);
-        void handlePeerBlockedAlert(const libtorrent::peer_blocked_alert *p);
-        void handlePeerBanAlert(const libtorrent::peer_ban_alert *p);
-        void handleUrlSeedAlert(const libtorrent::url_seed_alert *p);
-        void handleListenSucceededAlert(const libtorrent::listen_succeeded_alert *p);
-        void handleListenFailedAlert(const libtorrent::listen_failed_alert *p);
-        void handleExternalIPAlert(const libtorrent::external_ip_alert *p);
-        void handleSessionStatsAlert(const libtorrent::session_stats_alert *p);
+        void handleAlert(const lt::alert *a);
+        void dispatchTorrentAlert(const lt::alert *a);
+        void handleAddTorrentAlert(const lt::add_torrent_alert *p);
+        void handleStateUpdateAlert(const lt::state_update_alert *p);
+        void handleMetadataReceivedAlert(const lt::metadata_received_alert *p);
+        void handleFileErrorAlert(const lt::file_error_alert *p);
+        void handleTorrentRemovedAlert(const lt::torrent_removed_alert *p);
+        void handleTorrentDeletedAlert(const lt::torrent_deleted_alert *p);
+        void handleTorrentDeleteFailedAlert(const lt::torrent_delete_failed_alert *p);
+        void handlePortmapWarningAlert(const lt::portmap_error_alert *p);
+        void handlePortmapAlert(const lt::portmap_alert *p);
+        void handlePeerBlockedAlert(const lt::peer_blocked_alert *p);
+        void handlePeerBanAlert(const lt::peer_ban_alert *p);
+        void handleUrlSeedAlert(const lt::url_seed_alert *p);
+        void handleListenSucceededAlert(const lt::listen_succeeded_alert *p);
+        void handleListenFailedAlert(const lt::listen_failed_alert *p);
+        void handleExternalIPAlert(const lt::external_ip_alert *p);
+        void handleSessionStatsAlert(const lt::session_stats_alert *p);
 
-        void createTorrentHandle(const libtorrent::torrent_handle &nativeHandle);
+        void createTorrentHandle(const lt::torrent_handle &nativeHandle);
 
         void saveResumeData();
         void saveTorrentsQueue();
         void removeTorrentsQueue();
 
-        void getPendingAlerts(std::vector<libtorrent::alert *> &out, ulong time = 0);
+        void getPendingAlerts(std::vector<lt::alert *> &out, ulong time = 0);
 
         // BitTorrent
-        libtorrent::session *m_nativeSession;
+        lt::session *m_nativeSession;
 
         bool m_deferredConfigureScheduled;
         bool m_IPFilteringChanged;

@@ -77,6 +77,25 @@ function getSyncMainDataInterval() {
     return customSyncMainDataInterval ? customSyncMainDataInterval : serverSyncMainDataInterval;
 }
 
+const fetchQbtVersion = function() {
+    new Request({
+        url: 'api/v2/app/version',
+        method: 'get',
+        onSuccess: function(info) {
+            if (!info) return;
+            sessionStorage.setItem('qbtVersion', info);
+        }
+    }).send();
+};
+fetchQbtVersion();
+
+const qbtVersion = function() {
+    const version = sessionStorage.getItem('qbtVersion');
+    if (!version)
+        return '';
+    return version;
+};
+
 window.addEvent('load', function() {
 
     var saveColumnSizes = function() {
@@ -454,11 +473,11 @@ window.addEvent('load', function() {
         transfer_info += " (" + friendlyUnit(serverState.up_info_data, false) + ")";
         $("UpInfos").set('html', transfer_info);
         if (speedInTitle) {
-            document.title = "QBT_TR([D: %1, U: %2] qBittorrent %3)QBT_TR[CONTEXT=MainWindow]".replace("%1", friendlyUnit(serverState.dl_info_speed, true)).replace("%2", friendlyUnit(serverState.up_info_speed, true)).replace("%3", "${VERSION}");
+            document.title = "QBT_TR([D: %1, U: %2] qBittorrent %3)QBT_TR[CONTEXT=MainWindow]".replace("%1", friendlyUnit(serverState.dl_info_speed, true)).replace("%2", friendlyUnit(serverState.up_info_speed, true)).replace("%3", qbtVersion());
             document.title += " QBT_TR(Web UI)QBT_TR[CONTEXT=OptionsDialog]";
         }
         else
-            document.title = "qBittorrent ${VERSION} QBT_TR(Web UI)QBT_TR[CONTEXT=OptionsDialog]";
+            document.title = ("qBittorrent " + qbtVersion() + " QBT_TR(Web UI)QBT_TR[CONTEXT=OptionsDialog]");
         $('freeSpaceOnDisk').set('html', 'QBT_TR(Free space: %1)QBT_TR[CONTEXT=HttpServer]'.replace("%1", friendlyUnit(serverState.free_space_on_disk)));
         $('DHTNodes').set('html', 'QBT_TR(DHT: %1 nodes)QBT_TR[CONTEXT=StatusBar]'.replace("%1", serverState.dht_nodes));
 
@@ -677,6 +696,7 @@ window.addEvent('load', function() {
         loadMethod: 'xhr',
         contentURL: 'transferlist.html',
         onContentLoaded: function() {
+            handleDownloadParam();
             updateMainData();
         },
         column: 'mainColumn',
@@ -781,7 +801,47 @@ window.addEvent('load', function() {
         addMainWindowTabsEventListener();
         addSearchPanel();
     }
+
+    registerMagnetHandler();
 });
+
+function registerMagnetHandler() {
+    if (typeof navigator.registerProtocolHandler !== 'function')
+        return;
+
+    const hashParams = getHashParamsFromUrl();
+    hashParams.download = '';
+
+    const templateHashString = Object.toQueryString(hashParams).replace('download=', 'download=%s');
+
+    const templateUrl = location.origin + location.pathname
+        + location.search + '#' + templateHashString;
+
+    navigator.registerProtocolHandler('magnet', templateUrl,
+        'qBittorrent WebUI magnet handler');
+}
+
+function handleDownloadParam() {
+    // Extract torrent URL from download param in WebUI URL hash
+    const hashParams = getHashParamsFromUrl();
+    const url = hashParams.download;
+    if (!url)
+        return;
+
+    // Remove the download param from WebUI URL hash
+    delete hashParams.download;
+    let newHash = Object.toQueryString(hashParams);
+    newHash = newHash ? ('#' + newHash) : '';
+    history.replaceState('', document.title,
+        (location.pathname + location.search + newHash));
+
+    showDownloadPage([url]);
+}
+
+function getHashParamsFromUrl() {
+    const hashString = location.hash ? location.hash.replace(/^#/, '') : '';
+    return (hashString.length > 0) ? String.parseQueryString(hashString) : {};
+}
 
 function closeWindows() {
     MochaUI.closeAll();

@@ -117,6 +117,7 @@ namespace
 
 WebApplication::WebApplication(QObject *parent)
     : QObject(parent)
+    , m_cacheID {QString::number(Utils::Random::rand(), 36)}
 {
     registerAPIController(QLatin1String("app"), new AppController(this, this));
     registerAPIController(QLatin1String("auth"), new AuthController(this, this));
@@ -156,9 +157,7 @@ void WebApplication::sendWebUIFile()
     const QString path {
         (request().path != QLatin1String("/")
                 ? request().path
-                : (session()
-                   ? QLatin1String("/index.html")
-                   : QLatin1String("/login.html")))
+                : QLatin1String("/index.html"))
     };
 
     QString localPath {
@@ -227,7 +226,7 @@ void WebApplication::translateDocument(QString &data)
         }
 
         data.replace(QLatin1String("${LANG}"), m_currentLocale.left(2));
-        data.replace(QLatin1String("${VERSION}"), QBT_VERSION);
+        data.replace(QLatin1String("${CACHEID}"), m_cacheID);
     }
 }
 
@@ -416,20 +415,10 @@ Http::Response WebApplication::processRequest(const Http::Request &request, cons
     m_request = request;
     m_env = env;
     m_params.clear();
+
     if (m_request.method == Http::METHOD_GET) {
-        // Parse GET parameters
-        using namespace Utils::ByteArray;
-        for (const QByteArray &param : asConst(splitToViews(m_request.query, "&"))) {
-            const int sepPos = param.indexOf('=');
-            if (sepPos <= 0) continue; // ignores params without name
-
-            const QByteArray nameComponent = midView(param, 0, sepPos);
-            const QByteArray valueComponent = midView(param, (sepPos + 1));
-
-            const QString paramName = QString::fromUtf8(QByteArray::fromPercentEncoding(nameComponent));
-            const QString paramValue = QString::fromUtf8(QByteArray::fromPercentEncoding(valueComponent));
-            m_params[paramName] = paramValue;
-        }
+        for (auto iter = m_request.query.cbegin(); iter != m_request.query.cend(); ++iter)
+            m_params[iter.key()] = QString::fromUtf8(iter.value());
     }
     else {
         m_params = m_request.posts;
@@ -538,7 +527,7 @@ void WebApplication::sessionStart()
 
     // remove outdated sessions
     const qint64 now = QDateTime::currentMSecsSinceEpoch() / 1000;
-    const QMap<QString, WebSession *> sessionsCopy {m_sessions};
+    const QHash<QString, WebSession *> sessionsCopy {m_sessions};
     for (const auto session : sessionsCopy) {
         if ((now - session->timestamp()) > INACTIVE_TIME)
             delete m_sessions.take(session->id());

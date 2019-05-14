@@ -1,6 +1,6 @@
 /*
  * Bittorrent Client using Qt and libtorrent.
- * Copyright (C) 2015  Vladimir Golovnev <glassez@yandex.ru>
+ * Copyright (C) 2019  Vladimir Golovnev <glassez@yandex.ru>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -26,47 +26,43 @@
  * exception statement from your version.
  */
 
-#ifndef BITTORRENT_INFOHASH_H
-#define BITTORRENT_INFOHASH_H
+#pragma once
 
-#include <libtorrent/sha1_hash.hpp>
+#include <vector>
+
+#include <libtorrent/fwd.hpp>
 #include <libtorrent/version.hpp>
 
-#include <QString>
+#include <QHash>
 
-namespace BitTorrent
-{
-    class InfoHash
-    {
-    public:
-        InfoHash();
-        InfoHash(const lt::sha1_hash &nativeHash);
-        InfoHash(const QString &hashString);
-        InfoHash(const InfoHash &other) = default;
+#include "base/net/portforwarder.h"
 
-        static constexpr int length()
-        {
 #if (LIBTORRENT_VERSION_NUM < 10200)
-            return lt::sha1_hash::size;
+using LTPortMapping = int;
 #else
-            return lt::sha1_hash::size();
+#include <libtorrent/portmap.hpp>
+using LTPortMapping = lt::port_mapping_t;
 #endif
-        }
 
-        bool isValid() const;
+class PortForwarderImpl : public Net::PortForwarder
+{
+    Q_DISABLE_COPY(PortForwarderImpl)
 
-        operator lt::sha1_hash() const;
-        operator QString() const;
+public:
+    explicit PortForwarderImpl(lt::session *provider, QObject *parent = nullptr);
+    ~PortForwarderImpl() override;
 
-    private:
-        bool m_valid;
-        lt::sha1_hash m_nativeHash;
-        QString m_hashString;
-    };
+    bool isEnabled() const override;
+    void setEnabled(bool enabled) override;
 
-    bool operator==(const InfoHash &left, const InfoHash &right);
-    bool operator!=(const InfoHash &left, const InfoHash &right);
-    uint qHash(const InfoHash &key, uint seed);
-}
+    void addPort(quint16 port) override;
+    void deletePort(quint16 port) override;
 
-#endif // BITTORRENT_INFOHASH_H
+private:
+    void start();
+    void stop();
+
+    bool m_active;
+    lt::session *m_provider;
+    QHash<quint16, std::vector<LTPortMapping>> m_mappedPorts;
+};

@@ -2200,7 +2200,7 @@
                   <widget class="QComboBox" name="comboEncryption">
                    <item>
                     <property name="text">
-                     <string>Prefer encryption</string>
+                     <string>Allow encryption</string>
                     </property>
                    </item>
                    <item>

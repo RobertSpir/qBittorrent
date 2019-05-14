@@ -38,22 +38,22 @@ InfoHash::InfoHash()
 {
 }
 
-InfoHash::InfoHash(const libtorrent::sha1_hash &nativeHash)
+InfoHash::InfoHash(const lt::sha1_hash &nativeHash)
     : m_valid(true)
     , m_nativeHash(nativeHash)
 {
-    const QByteArray raw = QByteArray::fromRawData(nativeHash.data(), libtorrent::sha1_hash::size);
+    const QByteArray raw = QByteArray::fromRawData(nativeHash.data(), length());
     m_hashString = QString::fromLatin1(raw.toHex());
 }
 
 InfoHash::InfoHash(const QString &hashString)
     : m_valid(false)
 {
-    if (hashString.size() != (libtorrent::sha1_hash::size * 2))
+    if (hashString.size() != (length() * 2))
         return;
 
     const QByteArray raw = QByteArray::fromHex(hashString.toLatin1());
-    if (raw.size() != libtorrent::sha1_hash::size)  // QByteArray::fromHex() will skip over invalid characters
+    if (raw.size() != length())  // QByteArray::fromHex() will skip over invalid characters
         return;
 
     m_valid = true;
@@ -66,7 +66,7 @@ bool InfoHash::isValid() const
     return m_valid;
 }
 
-InfoHash::operator libtorrent::sha1_hash() const
+InfoHash::operator lt::sha1_hash() const
 {
     return m_nativeHash;
 }
@@ -78,8 +78,8 @@ InfoHash::operator QString() const
 
 bool BitTorrent::operator==(const InfoHash &left, const InfoHash &right)
 {
-    return (static_cast<libtorrent::sha1_hash>(left)
-            == static_cast<libtorrent::sha1_hash>(right));
+    return (static_cast<lt::sha1_hash>(left)
+            == static_cast<lt::sha1_hash>(right));
 }
 
 bool BitTorrent::operator!=(const InfoHash &left, const InfoHash &right)
