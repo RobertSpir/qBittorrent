@@ -43,6 +43,7 @@ namespace
         case BitTorrent::TorrentState::MissingFiles:
             return QLatin1String("missingFiles");
         case BitTorrent::TorrentState::Uploading:
+        case BitTorrent::TorrentState::UploadingGoodRatio:
             return QLatin1String("uploading");
         case BitTorrent::TorrentState::PausedUploading:
             return QLatin1String("pausedUP");

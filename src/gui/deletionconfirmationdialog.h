@@ -61,7 +61,7 @@ public:
 
         checkPermDelete->setChecked(defaultDeleteFiles || Preferences::instance()->deleteTorrentFilesAsDefault());
         connect(checkPermDelete, &QCheckBox::clicked, this, &DeletionConfirmationDialog::updateRememberButtonState);
-        buttonBox->button(QDialogButtonBox::Cancel)->setFocus();
+        buttonBox->button(QDialogButtonBox::Ok)->setFocus();
 
         Utils::Gui::resize(this);
     }

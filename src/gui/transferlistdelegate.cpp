@@ -243,6 +243,7 @@ QString TransferListDelegate::getStatusString(const BitTorrent::TorrentState sta
         str = tr("Allocating", "qBittorrent is allocating the files on disk");
         break;
     case BitTorrent::TorrentState::Uploading:
+    case BitTorrent::TorrentState::UploadingGoodRatio:
     case BitTorrent::TorrentState::StalledUploading:
         str = tr("Seeding", "Torrent is complete and in upload-only mode");
         break;

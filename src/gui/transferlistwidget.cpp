@@ -287,6 +287,9 @@ TransferListWidget::TransferListWidget(QWidget *parent, MainWindow *mainWindow)
     connect(header(), &QHeaderView::sectionMoved, this, &TransferListWidget::saveSettings);
     connect(header(), &QHeaderView::sectionResized, this, &TransferListWidget::saveSettings);
     connect(header(), &QHeaderView::sortIndicatorChanged, this, &TransferListWidget::saveSettings);
+#ifdef Q_OS_WIN
+    connect(m_listModel, SIGNAL(dataChanged(const QModelIndex, const QModelIndex)), this, SLOT(taskbarChanged()));
+#endif
 
     m_editHotkey = new QShortcut(Qt::Key_F2, this, nullptr, nullptr, Qt::WidgetShortcut);
     connect(m_editHotkey, &QShortcut::activated, this, &TransferListWidget::renameSelectedTorrent);
@@ -1204,6 +1207,17 @@ void TransferListWidget::saveSettings()
 {
     Preferences::instance()->setTransHeaderState(header()->saveState());
 }
+
+#ifdef Q_OS_WIN
+void TransferListWidget::taskbarChanged()
+{
+    const QList<BitTorrent::TorrentHandle *> torrents = getSelectedTorrents();
+    if (torrents.size() >= 1)
+        emit updateTaskbar(torrents[0]);
+    else
+        emit updateTaskbar(nullptr);
+}
+#endif
 
 bool TransferListWidget::loadSettings()
 {

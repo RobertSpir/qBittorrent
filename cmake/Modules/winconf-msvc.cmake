@@ -11,11 +11,6 @@ endif (STACKTRACE)
 # Enable Wide characters
 add_definitions(-DTORRENT_USE_WPATH)
 
-if (NOT QT5)
-    # Qt4 does not detect it itself
-    add_definitions(-DQ_COMPILER_INITIALIZER_LISTS)
-endif (NOT QT5)
-
 include(MacroConfigureMSVCRuntime)
 set(MSVC_RUNTIME "dynamic")
 configure_msvc_runtime()

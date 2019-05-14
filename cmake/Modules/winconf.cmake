@@ -7,9 +7,8 @@ list(APPEND CMAKE_LIBRARY_PATH "$ENV{LIB}")
 set(LibtorrentRasterbar_USE_STATIC_LIBS True)
 set(LibtorrentRasterbar_CUSTOM_DEFINITIONS
     -DBOOST_ALL_NO_LIB -DBOOST_ASIO_HASH_MAP_BUCKETS=1021
-    -DBOOST_ASIO_SEPARATE_COMPILATION
     -DBOOST_EXCEPTION_DISABLE
-    -DBOOST_SYSTEM_STATIC_LINK=1
+	-DBOOST_ASIO_DISABLE_CONNECTEX
     -DTORRENT_USE_OPENSSL
     -D__USE_W32_SOCKETS
     -D_FILE_OFFSET_BITS=64)
@@ -34,7 +33,7 @@ set(Boost_USE_STATIC_LIBS  True)
 # with usual unix subdirectories (bin, lib, include)
 # if so, we just need to set CMAKE_SYSTEM_PREFIX_PATH
 # If it is not the case, individual paths need to be specified manually (see below)
-set(COMMON_INSTALL_PREFIX "c:/usr" CACHE PATH "Prefix used to install all the required libraries")
+set(COMMON_INSTALL_PREFIX "D:/usr" CACHE PATH "Prefix used to install all the required libraries")
 list(APPEND CMAKE_SYSTEM_PREFIX_PATH "${COMMON_INSTALL_PREFIX}")
 
 # If two version of Qt are installed, separate prefixes are needed most likely

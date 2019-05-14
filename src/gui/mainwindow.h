@@ -57,6 +57,12 @@ class TorrentCreatorDialog;
 class TransferListFiltersWidget;
 class TransferListWidget;
 
+#ifdef Q_OS_WIN
+class QWinTaskbarButton;
+class QWinThumbnailToolBar;
+class QWinThumbnailToolButton;
+#endif
+
 namespace BitTorrent
 {
     class TorrentHandle;
@@ -138,6 +144,7 @@ private slots:
 #ifdef Q_OS_WIN
     void pythonDownloadSuccess(const QString &url, const QString &filePath);
     void pythonDownloadFailure(const QString &url, const QString &error);
+    void updateTaskbar(BitTorrent::TorrentHandle * torrent);
 #endif
     void addToolbarContextMenu();
     void manageCookies();
@@ -202,6 +209,7 @@ private:
 #endif
 #ifdef Q_OS_WIN
     void installPython();
+    void setupTaskbarButton();
 #endif
 
     void dropEvent(QDropEvent *event) override;
@@ -255,6 +263,11 @@ private:
 #if defined(Q_OS_WIN) || defined(Q_OS_MAC)
     QTimer *m_programUpdateTimer;
     bool m_wasUpdateCheckEnabled;
+#endif
+#ifdef Q_OS_WIN
+    QPointer<QWinThumbnailToolBar> m_thumbBar;
+    QWinThumbnailToolButton *m_resume, *m_pause;
+    QPointer<QWinTaskbarButton> m_taskbarButton;
 #endif
     bool m_hasPython;
     QMenu *m_toolbarMenu;

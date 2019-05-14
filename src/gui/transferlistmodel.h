@@ -37,6 +37,7 @@ namespace BitTorrent
 {
     class InfoHash;
     class TorrentHandle;
+    enum class TorrentState;
 }
 
 class TransferListModel : public QAbstractListModel
@@ -91,6 +92,8 @@ public:
     Qt::ItemFlags flags(const QModelIndex &index) const override;
 
     BitTorrent::TorrentHandle *torrentHandle(const QModelIndex &index) const;
+
+    static QIcon getIconByState(BitTorrent::TorrentState state);
 
 private slots:
     void addTorrent(BitTorrent::TorrentHandle *const torrent);
