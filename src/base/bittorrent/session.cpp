@@ -1944,7 +1944,7 @@ bool Session::deleteTorrent(const QString &hash, bool deleteLocalFiles)
             Utils::Fs::forceRemove(unwantedFile);
             const QString parentFolder = Utils::Fs::branchPath(unwantedFile);
             qDebug("Attempt to remove parent folder (if empty): %s", qUtf8Printable(parentFolder));
-            QDir().rmpath(parentFolder);
+            QDir().rmdir(parentFolder);
         }
     }
 
@@ -2155,6 +2155,9 @@ bool Session::addTorrent_impl(CreateTorrentParams params, const MagnetUri &magne
 
             try {
                 handle.auto_managed(false);
+                // Preloaded torrent is in "Upload mode" so we need to disable it
+                // otherwise the torrent never be downloaded (until application restart)
+                handle.set_upload_mode(false);
                 handle.pause();
             }
             catch (std::exception &) {}
@@ -2374,9 +2377,13 @@ void Session::generateResumeData(bool final)
 {
     for (TorrentHandle *const torrent : asConst(m_torrents)) {
         if (!torrent->isValid()) continue;
-        if (torrent->isChecking() || torrent->isPaused()) continue;
+
         if (!final && !torrent->needSaveResumeData()) continue;
-        if (torrent->hasMissingFiles() || torrent->hasError()) continue;
+        if (torrent->isChecking()
+            || torrent->isPaused()
+            || torrent->hasError()
+            || torrent->hasMissingFiles())
+            continue;
 
         saveTorrentResumeData(torrent);
     }
@@ -3106,22 +3113,20 @@ void Session::setCheckingMemUsage(int size)
 
 int Session::diskCacheSize() const
 {
-    int size = m_diskCacheSize;
     // These macros may not be available on compilers other than MSVC and GCC
 #if defined(__x86_64__) || defined(_M_X64)
-    size = qMin(size, 4096);  // 4GiB
+    return qMin(m_diskCacheSize.value(), 33554431);  // 32768GiB
 #else
     // When build as 32bit binary, set the maximum at less than 2GB to prevent crashes
     // allocate 1536MiB and leave 512MiB to the rest of program data in RAM
-    size = qMin(size, 1536);
+    return qMin(m_diskCacheSize.value(), 1536);
 #endif
-    return size;
 }
 
 void Session::setDiskCacheSize(int size)
 {
 #if defined(__x86_64__) || defined(_M_X64)
-    size = qMin(size, 4096);  // 4GiB
+    size = qMin(size, 33554431);  // 32768GiB
 #else
     // allocate 1536MiB and leave 512MiB to the rest of program data in RAM
     size = qMin(size, 1536);
@@ -4330,20 +4335,23 @@ void Session::handleMetadataReceivedAlert(libt::metadata_received_alert *p)
 
 void Session::handleFileErrorAlert(libt::file_error_alert *p)
 {
-    qDebug() << Q_FUNC_INFO;
-    // NOTE: Check this function!
     TorrentHandle *const torrent = m_torrents.value(p->handle.info_hash());
-    if (torrent) {
-        const InfoHash hash = torrent->hash();
-        if (!m_recentErroredTorrents.contains(hash)) {
-            m_recentErroredTorrents.insert(hash);
-            const QString msg = QString::fromStdString(p->message());
-            LogMsg(tr("An I/O error occurred, '%1' paused. %2").arg(torrent->name(), msg));
-            emit fullDiskError(torrent, msg);
-        }
+    if (!torrent)
+        return;
 
-        m_recentErroredTorrentsTimer->start();
+    const InfoHash hash = torrent->hash();
+
+    if (!m_recentErroredTorrents.contains(hash)) {
+        m_recentErroredTorrents.insert(hash);
+
+        const QString msg = QString::fromStdString(p->message());
+        LogMsg(tr("File error alert. Torrent: \"%1\". File: \"%2\". Reason: %3")
+                .arg(torrent->name(), p->filename(), msg)
+            , Log::WARNING);
+        emit fullDiskError(torrent, msg);
     }
+
+    m_recentErroredTorrentsTimer->start();
 }
 
 void Session::handlePortmapWarningAlert(libt::portmap_error_alert *p)

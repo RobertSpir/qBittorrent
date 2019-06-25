@@ -1170,8 +1170,8 @@ void MainWindow::closeEvent(QCloseEvent *e)
     if (!m_forceExit && m_systrayIcon && goToSystrayOnExit && !this->isHidden()) {
         if (pref->minimizeToTray())
         {
-            hide();
-            e->accept();
+            e->ignore();
+            QTimer::singleShot(0, this, &QWidget::hide);
         }
         else
         {
