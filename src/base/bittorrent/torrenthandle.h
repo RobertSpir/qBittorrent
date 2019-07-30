@@ -468,6 +468,7 @@ namespace BitTorrent
         qreal m_ratioLimit;
         int m_seedingTimeLimit;
         bool m_tempPathDisabled;
+        bool m_fastresumeDataRejected;
         bool m_hasMissingFiles;
         bool m_hasRootFolder;
         bool m_needsToSetFirstLastPiecePriority;
@@ -477,12 +478,15 @@ namespace BitTorrent
 
         enum StartupState
         {
-            NotStarted,
-            Starting,
-            Started
+            Preparing, // torrent is preparing to start regular processing
+            Starting, // torrent is prepared and starting to perform regular processing
+            Started // torrent is performing regular processing
         };
+        StartupState m_startupState = Preparing;
+        // Handle torrent state when it starts performing some service job
+        // being in Paused state so it might be unpaused internally and then paused again
+        bool m_pauseWhenReady;
 
-        StartupState m_startupState = NotStarted;
         bool m_unchecked = false;
     };
 }
