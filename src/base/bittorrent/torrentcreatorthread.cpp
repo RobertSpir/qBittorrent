@@ -43,15 +43,17 @@
 
 #include "base/global.h"
 #include "base/utils/fs.h"
-#include "base/utils/misc.h"
 #include "base/utils/string.h"
+#include "private/ltunderlyingtype.h"
 
 namespace
 {
 #if (LIBTORRENT_VERSION_NUM < 10200)
-    using CreateFlags = int;
+    using LTCreateFlags = int;
+    using LTPieceIndex = int;
 #else
-    using CreateFlags = lt::create_flags_t;
+    using LTCreateFlags = lt::create_flags_t;
+    using LTPieceIndex = lt::piece_index_t;
 #endif
 
     // do not include files and folders whose
@@ -136,8 +138,8 @@ void TorrentCreatorThread::run()
 
         if (isInterruptionRequested()) return;
 
-        lt::create_torrent newTorrent(fs, m_params.pieceSize, -1
-                                        , (m_params.isAlignmentOptimized ? lt::create_torrent::optimize_alignment : CreateFlags {}));
+        lt::create_torrent newTorrent(fs, m_params.pieceSize, m_params.paddedFileSizeLimit
+            , (m_params.isAlignmentOptimized ? lt::create_torrent::optimize_alignment : LTCreateFlags {}));
 
         // Add url seeds
         for (QString seed : asConst(m_params.urlSeeds)) {
@@ -158,7 +160,10 @@ void TorrentCreatorThread::run()
 
         // calculate the hash for all pieces
         lt::set_piece_hashes(newTorrent, Utils::Fs::toNativePath(parentPath).toStdString()
-            , [this, &newTorrent](const int n) { sendProgressSignal(n, newTorrent.num_pieces()); });
+            , [this, &newTorrent](const LTPieceIndex n)
+        {
+            sendProgressSignal(LTUnderlyingType<LTPieceIndex> {n}, newTorrent.num_pieces());
+        });
         // Set qBittorrent as creator and add user comment to
         // torrent_info structure
         newTorrent.set_creator(creatorStr.toUtf8().constData());
@@ -200,7 +205,7 @@ void TorrentCreatorThread::run()
     }
 }
 
-int TorrentCreatorThread::calculateTotalPieces(const QString &inputPath, const int pieceSize, const bool isAlignmentOptimized)
+int TorrentCreatorThread::calculateTotalPieces(const QString &inputPath, const int pieceSize, const bool isAlignmentOptimized, const int paddedFileSizeLimit)
 {
     if (inputPath.isEmpty())
         return 0;
@@ -208,6 +213,6 @@ int TorrentCreatorThread::calculateTotalPieces(const QString &inputPath, const i
     lt::file_storage fs;
     lt::add_files(fs, Utils::Fs::toNativePath(inputPath).toStdString(), fileFilter);
 
-    return lt::create_torrent(fs, pieceSize, -1
-                                , (isAlignmentOptimized ? lt::create_torrent::optimize_alignment : CreateFlags {})).num_pieces();
+    return lt::create_torrent(fs, pieceSize, paddedFileSizeLimit
+        , (isAlignmentOptimized ? lt::create_torrent::optimize_alignment : LTCreateFlags {})).num_pieces();
 }

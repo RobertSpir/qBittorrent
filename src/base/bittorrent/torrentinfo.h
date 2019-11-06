@@ -29,12 +29,10 @@
 #ifndef BITTORRENT_TORRENTINFO_H
 #define BITTORRENT_TORRENTINFO_H
 
-#include <libtorrent/fwd.hpp>
 #include <libtorrent/torrent_info.hpp>
 #include <libtorrent/version.hpp>
 
 #include <QCoreApplication>
-#include <QList>
 #include <QVector>
 
 #include "base/indexrange.h"
@@ -89,8 +87,8 @@ namespace BitTorrent
         QString origFilePath(int index) const;
         qlonglong fileSize(int index) const;
         qlonglong fileOffset(int index) const;
-        QList<TrackerEntry> trackers() const;
-        QList<QUrl> urlSeeds() const;
+        QVector<TrackerEntry> trackers() const;
+        QVector<QUrl> urlSeeds() const;
         QByteArray metadata() const;
         QStringList filesForPiece(int pieceIndex) const;
         QVector<int> fileIndicesForPiece(int pieceIndex) const;

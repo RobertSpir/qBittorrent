@@ -50,8 +50,8 @@
 #include "base/utils/misc.h"
 #include "proxyconfigurationmanager.h"
 
-// Spoof Firefox 38 user agent to avoid web server banning
-const char DEFAULT_USER_AGENT[] = "Mozilla/5.0 (X11; Linux i686; rv:38.0) Gecko/20100101 Firefox/38.0";
+// Disguise as Firefox to avoid web server banning
+const char DEFAULT_USER_AGENT[] = "Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101 Firefox/68.0";
 
 namespace
 {
@@ -120,6 +120,8 @@ namespace
     public:
         explicit DownloadHandlerImpl(const Net::DownloadRequest &downloadRequest, QObject *parent);
         ~DownloadHandlerImpl() override;
+
+        void cancel() override;
 
         QString url() const;
         const Net::DownloadRequest downloadRequest() const;
@@ -221,14 +223,14 @@ Net::DownloadHandler *Net::DownloadManager::download(const DownloadRequest &down
         m_waitingJobs[id].removeOne(downloadHandler);
     });
 
-    if (!isSequentialService || !m_busyServices.contains(id)) {
+    if (isSequentialService && m_busyServices.contains(id)) {
+        m_waitingJobs[id].enqueue(downloadHandler);
+    }
+    else {
         qDebug("Downloading %s...", qUtf8Printable(downloadRequest.url()));
         if (isSequentialService)
             m_busyServices.insert(id);
         downloadHandler->assignNetworkReply(m_networkManager.get(request));
-    }
-    else {
-        m_waitingJobs[id].enqueue(downloadHandler);
     }
 
     return downloadHandler;
@@ -308,9 +310,13 @@ void Net::DownloadManager::applyProxySettings()
 
 void Net::DownloadManager::handleReplyFinished(const QNetworkReply *reply)
 {
-    const ServiceID id = ServiceID::fromURL(reply->url());
+    // QNetworkReply::url() may be different from that of the original request
+    // so we need QNetworkRequest::url() to properly process Sequential Services
+    // in the case when the redirection occurred.
+    const ServiceID id = ServiceID::fromURL(reply->request().url());
     const auto waitingJobsIter = m_waitingJobs.find(id);
     if ((waitingJobsIter == m_waitingJobs.end()) || waitingJobsIter.value().isEmpty()) {
+        // No more waiting jobs for given ServiceID
         m_busyServices.remove(id);
         return;
     }
@@ -412,6 +418,17 @@ namespace
             delete m_reply;
     }
 
+    void DownloadHandlerImpl::cancel()
+    {
+        if (m_reply) {
+            m_reply->abort();
+        }
+        else {
+            setError(errorCodeToString(QNetworkReply::OperationCanceledError));
+            finish();
+        }
+    }
+
     void DownloadHandlerImpl::assignNetworkReply(QNetworkReply *reply)
     {
         Q_ASSERT(reply);
@@ -437,13 +454,12 @@ namespace
 
     void DownloadHandlerImpl::processFinishedDownload()
     {
-        const QString url = m_reply->url().toString();
-        qDebug("Download finished: %s", qUtf8Printable(url));
+        qDebug("Download finished: %s", qUtf8Printable(url()));
 
         // Check if the request was successful
         if (m_reply->error() != QNetworkReply::NoError) {
             // Failure
-            qDebug("Download failure (%s), reason: %s", qUtf8Printable(url), qUtf8Printable(errorCodeToString(m_reply->error())));
+            qDebug("Download failure (%s), reason: %s", qUtf8Printable(url()), qUtf8Printable(errorCodeToString(m_reply->error())));
             setError(errorCodeToString(m_reply->error()));
             finish();
             return;

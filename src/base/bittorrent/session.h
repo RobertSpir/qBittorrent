@@ -34,37 +34,46 @@
 
 #include <libtorrent/fwd.hpp>
 
-#include <QElapsedTimer>
-#include <QFile>
 #include <QHash>
-#include <QList>
-#include <QNetworkConfigurationManager>
 #include <QPointer>
 #include <QSet>
+#include <QVector>
 
 #include "base/settingvalue.h"
-#include "base/tristatebool.h"
 #include "base/types.h"
 #include "addtorrentparams.h"
 #include "cachestatus.h"
 #include "sessionstatus.h"
 #include "torrentinfo.h"
 
-class QThread;
-class QTimer;
+class QFile;
+class QNetworkConfiguration;
+class QNetworkConfigurationManager;
 class QString;
 class QStringList;
+class QThread;
+class QTimer;
 class QUrl;
 
-class FilterParserThread;
 class BandwidthScheduler;
-class Statistics;
+class FilterParserThread;
 class ResumeDataSavingManager;
+class Statistics;
 
+// These values should remain unchanged when adding new items
+// so as not to break the existing user settings.
 enum MaxRatioAction
 {
-    Pause,
-    Remove
+    Pause = 0,
+    Remove = 1,
+    DeleteFiles = 3,
+    EnableSuperSeeding = 2
+};
+
+enum DeleteOption
+{
+    Torrent,
+    TorrentAndFiles
 };
 
 enum TorrentExportFolder
@@ -81,51 +90,18 @@ namespace Net
 namespace BitTorrent
 {
     class InfoHash;
+    class MagnetUri;
     class TorrentHandle;
     class Tracker;
-    class MagnetUri;
     class TrackerEntry;
     struct CreateTorrentParams;
 
-    struct TorrentStatusReport
+    // Using `Q_ENUM_NS()` without a wrapper namespace in our case is not advised
+    // since `Q_NAMESPACE` cannot be used when the same namespace resides at different files.
+    // https://www.kdab.com/new-qt-5-8-meta-object-support-namespaces/#comment-143779
+    namespace SessionSettingsEnums
     {
-        uint nbDownloading = 0;
-        uint nbSeeding = 0;
-        uint nbCompleted = 0;
-        uint nbActive = 0;
-        uint nbInactive = 0;
-        uint nbPaused = 0;
-        uint nbResumed = 0;
-        uint nbErrored = 0;
-    };
-
-    class SessionSettingsEnums
-    {
-        Q_GADGET
-
-    public:
-        // TODO: remove `SessionSettingsEnums` wrapper when we can use `Q_ENUM_NS` directly (QT >= 5.8 only)
-        enum class ChokingAlgorithm : int
-        {
-            FixedSlots = 0,
-            RateBased = 1
-        };
-        Q_ENUM(ChokingAlgorithm)
-
-        enum class SeedChokingAlgorithm : int
-        {
-            RoundRobin = 0,
-            FastestUpload = 1,
-            AntiLeech = 2
-        };
-        Q_ENUM(SeedChokingAlgorithm)
-
-        enum class MixedModeAlgorithm : int
-        {
-            TCP = 0,
-            Proportional = 1
-        };
-        Q_ENUM(MixedModeAlgorithm)
+        Q_NAMESPACE
 
         enum class BTProtocol : int
         {
@@ -133,12 +109,43 @@ namespace BitTorrent
             TCP = 1,
             UTP = 2
         };
-        Q_ENUM(BTProtocol)
-    };
-    using ChokingAlgorithm = SessionSettingsEnums::ChokingAlgorithm;
-    using SeedChokingAlgorithm = SessionSettingsEnums::SeedChokingAlgorithm;
-    using MixedModeAlgorithm = SessionSettingsEnums::MixedModeAlgorithm;
-    using BTProtocol = SessionSettingsEnums::BTProtocol;
+        Q_ENUM_NS(BTProtocol)
+
+        enum class ChokingAlgorithm : int
+        {
+            FixedSlots = 0,
+            RateBased = 1
+        };
+        Q_ENUM_NS(ChokingAlgorithm)
+
+        enum class MixedModeAlgorithm : int
+        {
+            TCP = 0,
+            Proportional = 1
+        };
+        Q_ENUM_NS(MixedModeAlgorithm)
+
+        enum class SeedChokingAlgorithm : int
+        {
+            RoundRobin = 0,
+            FastestUpload = 1,
+            AntiLeech = 2
+        };
+        Q_ENUM_NS(SeedChokingAlgorithm)
+
+#if defined(Q_OS_WIN)
+        enum class OSMemoryPriority : int
+        {
+            Normal = 0,
+            BelowNormal = 1,
+            Medium = 2,
+            Low = 3,
+            VeryLow = 4
+        };
+        Q_ENUM_NS(OSMemoryPriority)
+#endif
+    }
+    using namespace SessionSettingsEnums;
 
     struct SessionMetricIndices
     {
@@ -206,7 +213,7 @@ namespace BitTorrent
         // returns category itself and all top level categories
         static QStringList expandCategory(const QString &category);
 
-        const QStringMap &categories() const;
+        QStringMap categories() const;
         QString categorySavePath(const QString &categoryName) const;
         bool addCategory(const QString &name, const QString &savePath = "");
         bool editCategory(const QString &name, const QString &savePath);
@@ -300,8 +307,6 @@ namespace BitTorrent
         void setIPv6Enabled(bool enabled);
         int encryption() const;
         void setEncryption(int state);
-        bool isForceProxyEnabled() const;
-        void setForceProxyEnabled(bool enabled);
         bool isProxyPeerConnectionsEnabled() const;
         void setProxyPeerConnectionsEnabled(bool enabled);
         ChokingAlgorithm chokingAlgorithm() const;
@@ -322,6 +327,8 @@ namespace BitTorrent
         void setAnnounceToAllTiers(bool val);
         int asyncIOThreads() const;
         void setAsyncIOThreads(int num);
+        int filePoolSize() const;
+        void setFilePoolSize(int size);
         int checkingMemUsage() const;
         void setCheckingMemUsage(int size);
         int diskCacheSize() const;
@@ -330,8 +337,6 @@ namespace BitTorrent
         void setDiskCacheTTL(int ttl);
         bool useOSCache() const;
         void setUseOSCache(bool use);
-        bool isGuidedReadCacheEnabled() const;
-        void setGuidedReadCacheEnabled(bool enabled);
         bool isCoalesceReadWriteEnabled() const;
         void setCoalesceReadWriteEnabled(bool enabled);
         bool isSuggestModeEnabled() const;
@@ -342,6 +347,8 @@ namespace BitTorrent
         void setSendBufferLowWatermark(int value);
         int sendBufferWatermarkFactor() const;
         void setSendBufferWatermarkFactor(int value);
+        int socketBacklogSize() const;
+        void setSocketBacklogSize(int value);
         bool isAnonymousModeEnabled() const;
         void setAnonymousModeEnabled(bool enabled);
         bool isQueueingSystemEnabled() const;
@@ -392,11 +399,14 @@ namespace BitTorrent
         void setTrackerFilteringEnabled(bool enabled);
         QStringList bannedIPs() const;
         void setBannedIPs(const QStringList &newList);
+#if defined(Q_OS_WIN)
+        OSMemoryPriority getOSMemoryPriority() const;
+        void setOSMemoryPriority(OSMemoryPriority priority);
+#endif
 
         void startUpTorrents();
         TorrentHandle *findTorrent(const InfoHash &hash) const;
         QHash<InfoHash, TorrentHandle *> torrents() const;
-        TorrentStatusReport torrentStatusReport() const;
         bool hasActiveTorrents() const;
         bool hasUnfinishedTorrents() const;
         bool hasRunningSeed() const;
@@ -414,17 +424,18 @@ namespace BitTorrent
         bool isKnownTorrent(const InfoHash &hash) const;
         bool addTorrent(const QString &source, const AddTorrentParams &params = AddTorrentParams());
         bool addTorrent(const TorrentInfo &torrentInfo, const AddTorrentParams &params = AddTorrentParams());
-        bool deleteTorrent(const QString &hash, bool deleteLocalFiles = false);
+        bool deleteTorrent(const InfoHash &hash, DeleteOption deleteOption = Torrent);
         bool loadMetadata(const MagnetUri &magnetUri);
         bool cancelLoadMetadata(const InfoHash &hash);
 
         void recursiveTorrentDownload(const InfoHash &hash);
-        void increaseTorrentsPriority(const QStringList &hashes);
-        void decreaseTorrentsPriority(const QStringList &hashes);
-        void topTorrentsPriority(const QStringList &hashes);
-        void bottomTorrentsPriority(const QStringList &hashes);
+        void increaseTorrentsQueuePos(const QVector<InfoHash> &hashes);
+        void decreaseTorrentsQueuePos(const QVector<InfoHash> &hashes);
+        void topTorrentsQueuePos(const QVector<InfoHash> &hashes);
+        void bottomTorrentsQueuePos(const QVector<InfoHash> &hashes);
 
         // TorrentHandle interface
+        void handleTorrentSaveResumeDataRequested(const TorrentHandle *torrent);
         void handleTorrentShareLimitChanged(TorrentHandle *const torrent);
         void handleTorrentNameChanged(TorrentHandle *const torrent);
         void handleTorrentSavePathChanged(TorrentHandle *const torrent);
@@ -437,11 +448,11 @@ namespace BitTorrent
         void handleTorrentResumed(TorrentHandle *const torrent);
         void handleTorrentChecked(TorrentHandle *const torrent);
         void handleTorrentFinished(TorrentHandle *const torrent);
-        void handleTorrentTrackersAdded(TorrentHandle *const torrent, const QList<TrackerEntry> &newTrackers);
-        void handleTorrentTrackersRemoved(TorrentHandle *const torrent, const QList<TrackerEntry> &deletedTrackers);
+        void handleTorrentTrackersAdded(TorrentHandle *const torrent, const QVector<TrackerEntry> &newTrackers);
+        void handleTorrentTrackersRemoved(TorrentHandle *const torrent, const QVector<TrackerEntry> &deletedTrackers);
         void handleTorrentTrackersChanged(TorrentHandle *const torrent);
-        void handleTorrentUrlSeedsAdded(TorrentHandle *const torrent, const QList<QUrl> &newUrlSeeds);
-        void handleTorrentUrlSeedsRemoved(TorrentHandle *const torrent, const QList<QUrl> &urlSeeds);
+        void handleTorrentUrlSeedsAdded(TorrentHandle *const torrent, const QVector<QUrl> &newUrlSeeds);
+        void handleTorrentUrlSeedsRemoved(TorrentHandle *const torrent, const QVector<QUrl> &urlSeeds);
         void handleTorrentResumeDataReady(TorrentHandle *const torrent, const lt::entry &data);
         void handleTorrentResumeDataFailed(TorrentHandle *const torrent);
         void handleTorrentTrackerReply(TorrentHandle *const torrent, const QString &trackerUrl);
@@ -449,43 +460,42 @@ namespace BitTorrent
         void handleTorrentTrackerError(TorrentHandle *const torrent, const QString &trackerUrl);
 
     signals:
-        void statsUpdated();
-        void torrentsUpdated();
         void addTorrentFailed(const QString &error);
-        void torrentAdded(BitTorrent::TorrentHandle *const torrent);
-        void torrentNew(BitTorrent::TorrentHandle *const torrent);
-        void torrentAboutToBeRemoved(BitTorrent::TorrentHandle *const torrent);
-        void torrentPaused(BitTorrent::TorrentHandle *const torrent);
-        void torrentResumed(BitTorrent::TorrentHandle *const torrent);
-        void torrentFinished(BitTorrent::TorrentHandle *const torrent);
-        void torrentFinishedChecking(BitTorrent::TorrentHandle *const torrent);
-        void torrentSavePathChanged(BitTorrent::TorrentHandle *const torrent);
-        void torrentCategoryChanged(BitTorrent::TorrentHandle *const torrent, const QString &oldCategory);
-        void torrentTagAdded(TorrentHandle *const torrent, const QString &tag);
-        void torrentTagRemoved(TorrentHandle *const torrent, const QString &tag);
-        void torrentSavingModeChanged(BitTorrent::TorrentHandle *const torrent);
         void allTorrentsFinished();
-        void metadataLoaded(const BitTorrent::TorrentInfo &info);
-        void torrentMetadataLoaded(BitTorrent::TorrentHandle *const torrent);
-        void fullDiskError(BitTorrent::TorrentHandle *const torrent, const QString &msg);
-        void trackerSuccess(BitTorrent::TorrentHandle *const torrent, const QString &tracker);
-        void trackerWarning(BitTorrent::TorrentHandle *const torrent, const QString &tracker);
-        void trackerError(BitTorrent::TorrentHandle *const torrent, const QString &tracker);
-        void trackerAuthenticationRequired(BitTorrent::TorrentHandle *const torrent);
-        void recursiveTorrentDownloadPossible(BitTorrent::TorrentHandle *const torrent);
-        void speedLimitModeChanged(bool alternative);
-        void IPFilterParsed(bool error, int ruleCount);
-        void trackersAdded(BitTorrent::TorrentHandle *const torrent, const QList<BitTorrent::TrackerEntry> &trackers);
-        void trackersRemoved(BitTorrent::TorrentHandle *const torrent, const QList<BitTorrent::TrackerEntry> &trackers);
-        void trackersChanged(BitTorrent::TorrentHandle *const torrent);
-        void trackerlessStateChanged(BitTorrent::TorrentHandle *const torrent, bool trackerless);
-        void downloadFromUrlFailed(const QString &url, const QString &reason);
-        void downloadFromUrlFinished(const QString &url);
         void categoryAdded(const QString &categoryName);
         void categoryRemoved(const QString &categoryName);
+        void downloadFromUrlFailed(const QString &url, const QString &reason);
+        void downloadFromUrlFinished(const QString &url);
+        void fullDiskError(BitTorrent::TorrentHandle *const torrent, const QString &msg);
+        void IPFilterParsed(bool error, int ruleCount);
+        void metadataLoaded(const BitTorrent::TorrentInfo &info);
+        void recursiveTorrentDownloadPossible(BitTorrent::TorrentHandle *const torrent);
+        void speedLimitModeChanged(bool alternative);
+        void statsUpdated();
         void subcategoriesSupportChanged();
         void tagAdded(const QString &tag);
         void tagRemoved(const QString &tag);
+        void torrentAboutToBeRemoved(BitTorrent::TorrentHandle *const torrent);
+        void torrentAdded(BitTorrent::TorrentHandle *const torrent);
+        void torrentCategoryChanged(BitTorrent::TorrentHandle *const torrent, const QString &oldCategory);
+        void torrentFinished(BitTorrent::TorrentHandle *const torrent);
+        void torrentFinishedChecking(BitTorrent::TorrentHandle *const torrent);
+        void torrentMetadataLoaded(BitTorrent::TorrentHandle *const torrent);
+        void torrentNew(BitTorrent::TorrentHandle *const torrent);
+        void torrentPaused(BitTorrent::TorrentHandle *const torrent);
+        void torrentResumed(BitTorrent::TorrentHandle *const torrent);
+        void torrentSavePathChanged(BitTorrent::TorrentHandle *const torrent);
+        void torrentSavingModeChanged(BitTorrent::TorrentHandle *const torrent);
+        void torrentsUpdated(const QVector<BitTorrent::TorrentHandle *> &torrents);
+        void torrentTagAdded(TorrentHandle *const torrent, const QString &tag);
+        void torrentTagRemoved(TorrentHandle *const torrent, const QString &tag);
+        void trackerError(BitTorrent::TorrentHandle *const torrent, const QString &tracker);
+        void trackerlessStateChanged(BitTorrent::TorrentHandle *const torrent, bool trackerless);
+        void trackersAdded(BitTorrent::TorrentHandle *const torrent, const QVector<BitTorrent::TrackerEntry> &trackers);
+        void trackersChanged(BitTorrent::TorrentHandle *const torrent);
+        void trackersRemoved(BitTorrent::TorrentHandle *const torrent, const QVector<BitTorrent::TrackerEntry> &trackers);
+        void trackerSuccess(BitTorrent::TorrentHandle *const torrent, const QString &tracker);
+        void trackerWarning(BitTorrent::TorrentHandle *const torrent, const QString &tracker);
 
     private slots:
         void configureDeferred();
@@ -499,14 +509,14 @@ namespace BitTorrent
 
         // Session reconfiguration triggers
         void networkOnlineStateChanged(bool online);
-        void networkConfigurationChange(const QNetworkConfiguration&);
+        void networkConfigurationChange(const QNetworkConfiguration &);
 
     private:
         struct RemovingTorrentData
         {
             QString name;
             QString savePathToRemove;
-            bool requestedFileDeletion;
+            DeleteOption deleteOption;
         };
 
         explicit Session(QObject *parent = nullptr);
@@ -519,21 +529,26 @@ namespace BitTorrent
 
         // Session configuration
         Q_INVOKABLE void configure();
-        void configure(lt::settings_pack &settingsPack);
+        void configureComponents();
+        void initializeNativeSession();
+        void loadLTSettings(lt::settings_pack &settingsPack);
         void configurePeerClasses();
         void adjustLimits(lt::settings_pack &settingsPack);
-        void applyBandwidthLimits(lt::settings_pack &settingsPack);
+        void applyBandwidthLimits(lt::settings_pack &settingsPack) const;
         void initMetrics();
         void adjustLimits();
         void applyBandwidthLimits();
         void processBannedIPs(lt::ip_filter &filter);
-        const QStringList getListeningIPs();
+        QStringList getListeningIPs() const;
         void configureListeningInterface();
         void enableTracker(bool enable);
         void enableBandwidthScheduler();
         void populateAdditionalTrackers();
         void enableIPFilter();
         void disableIPFilter();
+#if defined(Q_OS_WIN)
+        void applyOSMemoryPriority() const;
+#endif
 
         bool addTorrent_impl(CreateTorrentParams params, const MagnetUri &magnetUri,
                              TorrentInfo torrentInfo = TorrentInfo(),
@@ -542,13 +557,13 @@ namespace BitTorrent
 
         void updateSeedingLimitTimer();
         void exportTorrentFile(TorrentHandle *const torrent, TorrentExportFolder folder = TorrentExportFolder::Regular);
-        void saveTorrentResumeData(TorrentHandle *const torrent);
 
         void handleAlert(const lt::alert *a);
         void dispatchTorrentAlert(const lt::alert *a);
         void handleAddTorrentAlert(const lt::add_torrent_alert *p);
         void handleStateUpdateAlert(const lt::state_update_alert *p);
         void handleMetadataReceivedAlert(const lt::metadata_received_alert *p);
+        void handleTorrentPausedAlert(const lt::torrent_paused_alert *p);
         void handleFileErrorAlert(const lt::file_error_alert *p);
         void handleTorrentRemovedAlert(const lt::torrent_removed_alert *p);
         void handleTorrentDeletedAlert(const lt::torrent_deleted_alert *p);
@@ -562,6 +577,9 @@ namespace BitTorrent
         void handleListenFailedAlert(const lt::listen_failed_alert *p);
         void handleExternalIPAlert(const lt::external_ip_alert *p);
         void handleSessionStatsAlert(const lt::session_stats_alert *p);
+#if (LIBTORRENT_VERSION_NUM >= 10200)
+        void handleAlertsDroppedAlert(const lt::alerts_dropped_alert *p) const;
+#endif
 
         void createTorrentHandle(const lt::torrent_handle &nativeHandle);
 
@@ -569,14 +587,14 @@ namespace BitTorrent
         void saveTorrentsQueue();
         void removeTorrentsQueue();
 
-        void getPendingAlerts(std::vector<lt::alert *> &out, ulong time = 0);
+        std::vector<lt::alert *> getPendingAlerts(lt::time_duration time = lt::time_duration::zero()) const;
 
         // BitTorrent
-        lt::session *m_nativeSession;
+        lt::session *m_nativeSession = nullptr;
 
-        bool m_deferredConfigureScheduled;
-        bool m_IPFilteringChanged;
-        bool m_listenInterfaceChanged; // optimization
+        bool m_deferredConfigureScheduled = false;
+        bool m_IPFilteringConfigured = false;
+        bool m_listenInterfaceConfigured = false;
 
         CachedSettingValue<bool> m_isDHTEnabled;
         CachedSettingValue<bool> m_isLSDEnabled;
@@ -587,16 +605,17 @@ namespace BitTorrent
         CachedSettingValue<bool> m_announceToAllTrackers;
         CachedSettingValue<bool> m_announceToAllTiers;
         CachedSettingValue<int> m_asyncIOThreads;
+        CachedSettingValue<int> m_filePoolSize;
         CachedSettingValue<int> m_checkingMemUsage;
         CachedSettingValue<int> m_diskCacheSize;
         CachedSettingValue<int> m_diskCacheTTL;
         CachedSettingValue<bool> m_useOSCache;
-        CachedSettingValue<bool> m_guidedReadCacheEnabled;
         CachedSettingValue<bool> m_coalesceReadWriteEnabled;
         CachedSettingValue<bool> m_isSuggestMode;
         CachedSettingValue<int> m_sendBufferWatermark;
         CachedSettingValue<int> m_sendBufferLowWatermark;
         CachedSettingValue<int> m_sendBufferWatermarkFactor;
+        CachedSettingValue<int> m_socketBacklogSize;
         CachedSettingValue<bool> m_isAnonymousModeEnabled;
         CachedSettingValue<bool> m_isQueueingEnabled;
         CachedSettingValue<int> m_maxActiveDownloads;
@@ -645,7 +664,6 @@ namespace BitTorrent
         CachedSettingValue<QString> m_networkInterfaceAddress;
         CachedSettingValue<bool> m_isIPv6Enabled;
         CachedSettingValue<int> m_encryption;
-        CachedSettingValue<bool> m_isForceProxyEnabled;
         CachedSettingValue<bool> m_isProxyPeerConnectionsEnabled;
         CachedSettingValue<ChokingAlgorithm> m_chokingAlgorithm;
         CachedSettingValue<SeedChokingAlgorithm> m_seedChokingAlgorithm;
@@ -662,52 +680,53 @@ namespace BitTorrent
         CachedSettingValue<bool> m_isDisableAutoTMMWhenCategorySavePathChanged;
         CachedSettingValue<bool> m_isTrackerEnabled;
         CachedSettingValue<QStringList> m_bannedIPs;
+#if defined(Q_OS_WIN)
+        CachedSettingValue<OSMemoryPriority> m_OSMemoryPriority;
+#endif
 
         // Order is important. This needs to be declared after its CachedSettingsValue
         // counterpart, because it uses it for initialization in the constructor
         // initialization list.
-        const bool m_wasPexEnabled;
+        const bool m_wasPexEnabled = m_isPeXEnabled;
 
-        int m_numResumeData;
-        int m_extraLimit;
-        QList<BitTorrent::TrackerEntry> m_additionalTrackerList;
+        int m_numResumeData = 0;
+        int m_extraLimit = 0;
+        QVector<BitTorrent::TrackerEntry> m_additionalTrackerList;
         QString m_resumeFolderPath;
-        QFile m_resumeFolderLock;
-        bool m_useProxy;
+        QFile *m_resumeFolderLock = nullptr;
 
-        QTimer *m_refreshTimer;
-        QTimer *m_seedingLimitTimer;
-        QTimer *m_resumeDataTimer;
-        Statistics *m_statistics;
+        QTimer *m_refreshTimer = nullptr;
+        QTimer *m_seedingLimitTimer = nullptr;
+        QTimer *m_resumeDataTimer = nullptr;
+        Statistics *m_statistics = nullptr;
         // IP filtering
         QPointer<FilterParserThread> m_filterParser;
         QPointer<BandwidthScheduler> m_bwScheduler;
         // Tracker
         QPointer<Tracker> m_tracker;
         // fastresume data writing thread
-        QThread *m_ioThread;
-        ResumeDataSavingManager *m_resumeDataSavingManager;
+        QThread *m_ioThread = nullptr;
+        ResumeDataSavingManager *m_resumeDataSavingManager = nullptr;
 
         QHash<InfoHash, TorrentInfo> m_loadedMetadata;
         QHash<InfoHash, TorrentHandle *> m_torrents;
         QHash<InfoHash, CreateTorrentParams> m_addingTorrents;
         QHash<QString, AddTorrentParams> m_downloadedTorrents;
         QHash<InfoHash, RemovingTorrentData> m_removingTorrents;
-        TorrentStatusReport m_torrentStatusReport;
         QStringMap m_categories;
         QSet<QString> m_tags;
 
         // I/O errored torrents
         QSet<InfoHash> m_recentErroredTorrents;
-        QTimer *m_recentErroredTorrentsTimer;
+        QTimer *m_recentErroredTorrentsTimer = nullptr;
 
         SessionMetricIndices m_metricIndices;
-        QElapsedTimer m_statsUpdateTimer;
+        lt::time_point m_statsLastTimestamp = lt::clock_type::now();
 
         SessionStatus m_status;
         CacheStatus m_cacheStatus;
 
-        QNetworkConfigurationManager m_networkManager;
+        QNetworkConfigurationManager *m_networkManager = nullptr;
 
         static Session *m_instance;
     };

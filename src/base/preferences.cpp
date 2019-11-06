@@ -29,10 +29,21 @@
 
 #include "preferences.h"
 
+#ifdef Q_OS_MACOS
+#include <CoreServices/CoreServices.h>
+#endif
+#ifdef Q_OS_WIN
+#include <shlobj.h>
+#endif
+
+#include <QDateTime>
 #include <QDir>
 #include <QLocale>
-#include <QMutableListIterator>
+#include <QNetworkCookie>
 #include <QSettings>
+#include <QSize>
+#include <QTime>
+#include <QVariant>
 
 #ifndef DISABLE_GUI
 #include <QApplication>
@@ -41,18 +52,13 @@
 #endif
 
 #ifdef Q_OS_WIN
-#include <shlobj.h>
 #include <QRegularExpression>
 #endif
 
-#ifdef Q_OS_MAC
-#include <CoreServices/CoreServices.h>
-#endif
-
+#include "algorithm.h"
 #include "global.h"
 #include "settingsstorage.h"
 #include "utils/fs.h"
-#include "utils/misc.h"
 
 Preferences *Preferences::m_instance = nullptr;
 
@@ -97,6 +103,27 @@ QString Preferences::getLocale() const
 void Preferences::setLocale(const QString &locale)
 {
     setValue("Preferences/General/Locale", locale);
+}
+
+bool Preferences::useCustomUITheme() const
+{
+    return value("Preferences/General/UseCustomUITheme", false).toBool()
+           && !customUIThemePath().isEmpty();
+}
+
+void Preferences::setUseCustomUITheme(const bool use)
+{
+    setValue("Preferences/General/UseCustomUITheme", use);
+}
+
+QString Preferences::customUIThemePath() const
+{
+    return value("Preferences/General/CustomUIThemePath").toString();
+}
+
+void Preferences::setCustomUIThemePath(const QString &path)
+{
+    setValue("Preferences/General/CustomUIThemePath", path);
 }
 
 bool Preferences::deleteTorrentFilesAsDefault() const
@@ -161,7 +188,7 @@ void Preferences::setHideZeroComboValues(const int n)
 
 // In Mac OS X the dock is sufficient for our needs so we disable the sys tray functionality.
 // See extensive discussion in https://github.com/qbittorrent/qBittorrent/pull/3018
-#ifndef Q_OS_MAC
+#ifndef Q_OS_MACOS
 bool Preferences::systrayIntegration() const
 {
     return value("Preferences/General/SystrayEnabled", true).toBool();
@@ -211,7 +238,7 @@ void Preferences::setCloseToTrayNotified(const bool b)
 {
     setValue("Preferences/General/CloseToTrayNotified", b);
 }
-#endif // Q_OS_MAC
+#endif // Q_OS_MACOS
 
 bool Preferences::isToolbarDisplayed() const
 {
@@ -307,12 +334,12 @@ void Preferences::setWinTaskbar(bool b)
 // Downloads
 QString Preferences::lastLocationPath() const
 {
-    return Utils::Fs::fromNativePath(value("Preferences/Downloads/LastLocationPath").toString());
+    return Utils::Fs::toUniformPath(value("Preferences/Downloads/LastLocationPath").toString());
 }
 
 void Preferences::setLastLocationPath(const QString &path)
 {
-    setValue("Preferences/Downloads/LastLocationPath", Utils::Fs::fromNativePath(path));
+    setValue("Preferences/Downloads/LastLocationPath", Utils::Fs::toUniformPath(path));
 }
 
 QVariantHash Preferences::getScanDirs() const
@@ -328,12 +355,12 @@ void Preferences::setScanDirs(const QVariantHash &dirs)
 
 QString Preferences::getScanDirsLastPath() const
 {
-    return Utils::Fs::fromNativePath(value("Preferences/Downloads/ScanDirsLastPath").toString());
+    return Utils::Fs::toUniformPath(value("Preferences/Downloads/ScanDirsLastPath").toString());
 }
 
 void Preferences::setScanDirsLastPath(const QString &path)
 {
-    setValue("Preferences/Downloads/ScanDirsLastPath", Utils::Fs::fromNativePath(path));
+    setValue("Preferences/Downloads/ScanDirsLastPath", Utils::Fs::toUniformPath(path));
 }
 
 bool Preferences::isMailNotificationEnabled() const
@@ -511,28 +538,31 @@ void Preferences::setWebUiAuthSubnetWhitelistEnabled(const bool enabled)
     setValue("Preferences/WebUI/AuthSubnetWhitelistEnabled", enabled);
 }
 
-QList<Utils::Net::Subnet> Preferences::getWebUiAuthSubnetWhitelist() const
+QVector<Utils::Net::Subnet> Preferences::getWebUiAuthSubnetWhitelist() const
 {
-    QList<Utils::Net::Subnet> subnets;
-    for (const QString &rawSubnet : asConst(value("Preferences/WebUI/AuthSubnetWhitelist").toStringList())) {
+    const QStringList subnets = value("Preferences/WebUI/AuthSubnetWhitelist").toStringList();
+
+    QVector<Utils::Net::Subnet> ret;
+    ret.reserve(subnets.size());
+
+    for (const QString &rawSubnet : subnets) {
         bool ok = false;
         const Utils::Net::Subnet subnet = Utils::Net::parseSubnet(rawSubnet.trimmed(), &ok);
         if (ok)
-            subnets.append(subnet);
+            ret.append(subnet);
     }
 
-    return subnets;
+    return ret;
 }
 
 void Preferences::setWebUiAuthSubnetWhitelist(QStringList subnets)
 {
-    QMutableListIterator<QString> i(subnets);
-    while (i.hasNext()) {
+    Algorithm::removeIf(subnets, [](const QString &subnet)
+    {
         bool ok = false;
-        const Utils::Net::Subnet subnet = Utils::Net::parseSubnet(i.next().trimmed(), &ok);
-        if (!ok)
-            i.remove();
-    }
+        Utils::Net::parseSubnet(subnet.trimmed(), &ok);
+        return !ok;
+    });
 
     setValue("Preferences/WebUI/AuthSubnetWhitelist", subnets);
 }
@@ -601,6 +631,16 @@ QByteArray Preferences::getWebUIPassword() const
 void Preferences::setWebUIPassword(const QByteArray &password)
 {
     setValue("Preferences/WebUI/Password_PBKDF2", password);
+}
+
+int Preferences::getWebUISessionTimeout() const
+{
+    return value("Preferences/WebUI/SessionTimeout", 3600).toInt();
+}
+
+void Preferences::setWebUISessionTimeout(const int timeout)
+{
+    setValue("Preferences/WebUI/SessionTimeout", timeout);
 }
 
 bool Preferences::isWebUiClickjackingProtectionEnabled() const
@@ -854,7 +894,7 @@ void Preferences::resolvePeerHostNames(const bool resolve)
     setValue("Preferences/Connection/ResolvePeerHostNames", resolve);
 }
 
-#if (defined(Q_OS_UNIX) && !defined(Q_OS_MAC))
+#if (defined(Q_OS_UNIX) && !defined(Q_OS_MACOS))
 bool Preferences::useSystemIconTheme() const
 {
     return value("Preferences/Advanced/useSystemIconTheme", true).toBool();
@@ -958,7 +998,7 @@ void Preferences::setMagnetLinkAssoc(const bool set)
 }
 #endif // Q_OS_WIN
 
-#ifdef Q_OS_MAC
+#ifdef Q_OS_MACOS
 namespace
 {
     const CFStringRef torrentExtension = CFSTR("torrent");
@@ -1012,7 +1052,7 @@ void Preferences::setMagnetLinkAssoc()
     const CFStringRef myBundleId = CFBundleGetIdentifier(CFBundleGetMainBundle());
     LSSetDefaultHandlerForURLScheme(magnetUrlScheme, myBundleId);
 }
-#endif // Q_OS_MAC
+#endif // Q_OS_MACOS
 
 int Preferences::getTrackerPort() const
 {
@@ -1024,7 +1064,7 @@ void Preferences::setTrackerPort(const int port)
     setValue("Preferences/Advanced/trackerPort", port);
 }
 
-#if defined(Q_OS_WIN) || defined(Q_OS_MAC)
+#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
 bool Preferences::isUpdateCheckEnabled() const
 {
     return value("Preferences/Advanced/updateCheck", true).toBool();
@@ -1066,7 +1106,7 @@ void Preferences::setConfirmRemoveAllTags(const bool enabled)
     setValue("Preferences/Advanced/confirmRemoveAllTags", enabled);
 }
 
-#ifndef Q_OS_MAC
+#ifndef Q_OS_MACOS
 TrayIcon::Style Preferences::trayIconStyle() const
 {
     return TrayIcon::Style(value("Preferences/Advanced/TrayIconStyle", TrayIcon::NORMAL).toInt());

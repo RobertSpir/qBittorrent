@@ -28,7 +28,6 @@
 
 #include "mainwindow.h"
 
-#include <QClipboard>
 #include <QCloseEvent>
 #include <QDebug>
 #include <QDesktopServices>
@@ -38,11 +37,9 @@
 #include <QMimeData>
 #include <QProcess>
 #include <QPushButton>
-#include <QScrollBar>
 #include <QShortcut>
 #include <QSplitter>
 #include <QStatusBar>
-#include <QSysInfo>
 #include <QtGlobal>
 #include <QTimer>
 
@@ -53,11 +50,10 @@
 #include <QtWinExtras/QWinThumbnailToolButton>
 #endif
 
-#ifdef Q_OS_MAC
-#include <QtMac>
+#ifdef Q_OS_MACOS#include <QtMac>
 #include <QtMacExtras>
 #endif
-#if (defined(Q_OS_UNIX) && !defined(Q_OS_MAC)) && defined(QT_DBUS_LIB)
+#if (defined(Q_OS_UNIX) && !defined(Q_OS_MACOS)) && defined(QT_DBUS_LIB)
 #include <QDBusConnection>
 #include "notifications.h"
 #endif
@@ -78,12 +74,10 @@
 #include "base/utils/password.h"
 #include "aboutdialog.h"
 #include "addnewtorrentdialog.h"
-#include "application.h"
 #include "autoexpandabledialog.h"
 #include "cookiesdialog.h"
 #include "downloadfromurldialog.h"
 #include "executionlogwidget.h"
-#include "guiiconprovider.h"
 #include "hidabletabwidget.h"
 #include "lineedit.h"
 #include "optionsdialog.h"
@@ -96,20 +90,18 @@
 #include "statsdialog.h"
 #include "statusbar.h"
 #include "torrentcreatordialog.h"
-#include "transferlistmodel.h"
 #include "trackerlistwidget.h"
 #include "transferlistfilterswidget.h"
+#include "transferlistmodel.h"
 #include "transferlistwidget.h"
 #include "ui_mainwindow.h"
+#include "uithememanager.h"
 #include "utils.h"
 
-#ifdef Q_OS_WIN
-#include "base/net/downloadmanager.h"
-#endif
-#ifdef Q_OS_MAC
+#ifdef Q_OS_MACOS
 #include "macutilities.h"
 #endif
-#if defined(Q_OS_WIN) || defined(Q_OS_MAC)
+#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
 #include "programupdater.h"
 #endif
 
@@ -146,7 +138,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_posInitialized(false)
     , m_forceExit(false)
     , m_unlockDlgShowing(false)
-#if defined(Q_OS_WIN) || defined(Q_OS_MAC)
+#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
     , m_wasUpdateCheckEnabled(false)
 #endif
     , m_hasPython(false)
@@ -158,7 +150,7 @@ MainWindow::MainWindow(QWidget *parent)
     setWindowTitle("qBittorrent " QBT_VERSION);
     m_displaySpeedInTitle = pref->speedInTitleBar();
     // Setting icons
-#ifndef Q_OS_MAC
+#ifndef Q_OS_MACOS
 #ifdef Q_OS_UNIX
     const QIcon appLogo = Preferences::instance()->useSystemIconTheme()
         ? QIcon::fromTheme("qbittorrent", QIcon(":/icons/skin/qbittorrent-tray.svg"))
@@ -167,7 +159,7 @@ MainWindow::MainWindow(QWidget *parent)
     const QIcon appLogo(":/icons/skin/qbittorrent-tray.svg");
 #endif // Q_OS_UNIX
     setWindowIcon(appLogo);
-#endif // Q_OS_MAC
+#endif // Q_OS_MACOS
 
 #if (defined(Q_OS_UNIX))
     m_ui->actionOptions->setText(tr("Preferences"));
@@ -175,31 +167,31 @@ MainWindow::MainWindow(QWidget *parent)
 
     addToolbarContextMenu();
 
-    m_ui->actionOpen->setIcon(GuiIconProvider::instance()->getIcon("list-add"));
-    m_ui->actionDownloadFromURL->setIcon(GuiIconProvider::instance()->getIcon("insert-link"));
-    m_ui->actionSetUploadLimit->setIcon(GuiIconProvider::instance()->getIcon("kt-set-max-upload-speed"));
-    m_ui->actionSetDownloadLimit->setIcon(GuiIconProvider::instance()->getIcon("kt-set-max-download-speed"));
-    m_ui->actionSetGlobalUploadLimit->setIcon(GuiIconProvider::instance()->getIcon("kt-set-max-upload-speed"));
-    m_ui->actionSetGlobalDownloadLimit->setIcon(GuiIconProvider::instance()->getIcon("kt-set-max-download-speed"));
-    m_ui->actionCreateTorrent->setIcon(GuiIconProvider::instance()->getIcon("document-edit"));
-    m_ui->actionAbout->setIcon(GuiIconProvider::instance()->getIcon("help-about"));
-    m_ui->actionStatistics->setIcon(GuiIconProvider::instance()->getIcon("view-statistics"));
-    m_ui->actionDecreasePriority->setIcon(GuiIconProvider::instance()->getIcon("go-down"));
-    m_ui->actionBottomPriority->setIcon(GuiIconProvider::instance()->getIcon("go-bottom"));
-    m_ui->actionDelete->setIcon(GuiIconProvider::instance()->getIcon("list-remove"));
-    m_ui->actionDocumentation->setIcon(GuiIconProvider::instance()->getIcon("help-contents"));
-    m_ui->actionDonateMoney->setIcon(GuiIconProvider::instance()->getIcon("wallet-open"));
-    m_ui->actionExit->setIcon(GuiIconProvider::instance()->getIcon("application-exit"));
-    m_ui->actionIncreasePriority->setIcon(GuiIconProvider::instance()->getIcon("go-up"));
-    m_ui->actionTopPriority->setIcon(GuiIconProvider::instance()->getIcon("go-top"));
-    m_ui->actionLock->setIcon(GuiIconProvider::instance()->getIcon("object-locked"));
-    m_ui->actionOptions->setIcon(GuiIconProvider::instance()->getIcon("configure", "preferences-system"));
-    m_ui->actionPause->setIcon(GuiIconProvider::instance()->getIcon("media-playback-pause"));
-    m_ui->actionPauseAll->setIcon(GuiIconProvider::instance()->getIcon("media-playback-pause"));
-    m_ui->actionStart->setIcon(GuiIconProvider::instance()->getIcon("media-playback-start"));
-    m_ui->actionStartAll->setIcon(GuiIconProvider::instance()->getIcon("media-playback-start"));
-    m_ui->menuAutoShutdownOnDownloadsCompletion->setIcon(GuiIconProvider::instance()->getIcon("application-exit"));
-    m_ui->actionManageCookies->setIcon(GuiIconProvider::instance()->getIcon("preferences-web-browser-cookies"));
+    m_ui->actionOpen->setIcon(UIThemeManager::instance()->getIcon("list-add"));
+    m_ui->actionDownloadFromURL->setIcon(UIThemeManager::instance()->getIcon("insert-link"));
+    m_ui->actionSetUploadLimit->setIcon(UIThemeManager::instance()->getIcon("kt-set-max-upload-speed"));
+    m_ui->actionSetDownloadLimit->setIcon(UIThemeManager::instance()->getIcon("kt-set-max-download-speed"));
+    m_ui->actionSetGlobalUploadLimit->setIcon(UIThemeManager::instance()->getIcon("kt-set-max-upload-speed"));
+    m_ui->actionSetGlobalDownloadLimit->setIcon(UIThemeManager::instance()->getIcon("kt-set-max-download-speed"));
+    m_ui->actionCreateTorrent->setIcon(UIThemeManager::instance()->getIcon("document-edit"));
+    m_ui->actionAbout->setIcon(UIThemeManager::instance()->getIcon("help-about"));
+    m_ui->actionStatistics->setIcon(UIThemeManager::instance()->getIcon("view-statistics"));
+    m_ui->actionTopQueuePos->setIcon(UIThemeManager::instance()->getIcon("go-top"));
+    m_ui->actionIncreaseQueuePos->setIcon(UIThemeManager::instance()->getIcon("go-up"));
+    m_ui->actionDecreaseQueuePos->setIcon(UIThemeManager::instance()->getIcon("go-down"));
+    m_ui->actionBottomQueuePos->setIcon(UIThemeManager::instance()->getIcon("go-bottom"));
+    m_ui->actionDelete->setIcon(UIThemeManager::instance()->getIcon("list-remove"));
+    m_ui->actionDocumentation->setIcon(UIThemeManager::instance()->getIcon("help-contents"));
+    m_ui->actionDonateMoney->setIcon(UIThemeManager::instance()->getIcon("wallet-open"));
+    m_ui->actionExit->setIcon(UIThemeManager::instance()->getIcon("application-exit"));
+    m_ui->actionLock->setIcon(UIThemeManager::instance()->getIcon("object-locked"));
+    m_ui->actionOptions->setIcon(UIThemeManager::instance()->getIcon("configure", "preferences-system"));
+    m_ui->actionPause->setIcon(UIThemeManager::instance()->getIcon("media-playback-pause"));
+    m_ui->actionPauseAll->setIcon(UIThemeManager::instance()->getIcon("media-playback-pause"));
+    m_ui->actionStart->setIcon(UIThemeManager::instance()->getIcon("media-playback-start"));
+    m_ui->actionStartAll->setIcon(UIThemeManager::instance()->getIcon("media-playback-start"));
+    m_ui->menuAutoShutdownOnDownloadsCompletion->setIcon(UIThemeManager::instance()->getIcon("application-exit"));
+    m_ui->actionManageCookies->setIcon(UIThemeManager::instance()->getIcon("preferences-web-browser-cookies"));
 
     auto *lockMenu = new QMenu(this);
     QAction *defineUiLockPasswdAct = lockMenu->addAction(tr("&Set Password"));
@@ -253,8 +245,8 @@ MainWindow::MainWindow(QWidget *parent)
     m_splitter->setCollapsible(0, true);
     m_splitter->setCollapsible(1, false);
     m_tabs->addTab(m_splitter,
-#ifndef Q_OS_MAC
-        GuiIconProvider::instance()->getIcon("folder-remote"),
+#ifndef Q_OS_MACOS
+        UIThemeManager::instance()->getIcon("folder-remote"),
 #endif
         tr("Transfers"));
 
@@ -266,22 +258,24 @@ MainWindow::MainWindow(QWidget *parent)
     connect(BitTorrent::Session::instance(), &BitTorrent::Session::trackersRemoved, m_transferListFiltersWidget, &TransferListFiltersWidget::removeTrackers);
     connect(BitTorrent::Session::instance(), &BitTorrent::Session::trackerlessStateChanged, m_transferListFiltersWidget, &TransferListFiltersWidget::changeTrackerless);
 
-    using Func = void (TransferListFiltersWidget::*)(BitTorrent::TorrentHandle *const, const QString &);
-    connect(BitTorrent::Session::instance(), &BitTorrent::Session::trackerSuccess, m_transferListFiltersWidget, static_cast<Func>(&TransferListFiltersWidget::trackerSuccess));
-    connect(BitTorrent::Session::instance(), &BitTorrent::Session::trackerError, m_transferListFiltersWidget, static_cast<Func>(&TransferListFiltersWidget::trackerError));
-    connect(BitTorrent::Session::instance(), &BitTorrent::Session::trackerWarning, m_transferListFiltersWidget, static_cast<Func>(&TransferListFiltersWidget::trackerWarning));
+    connect(BitTorrent::Session::instance(), &BitTorrent::Session::trackerSuccess
+        , m_transferListFiltersWidget, qOverload<BitTorrent::TorrentHandle *const, const QString &>(&TransferListFiltersWidget::trackerSuccess));
+    connect(BitTorrent::Session::instance(), &BitTorrent::Session::trackerError
+        , m_transferListFiltersWidget, qOverload<BitTorrent::TorrentHandle *const, const QString &>(&TransferListFiltersWidget::trackerError));
+    connect(BitTorrent::Session::instance(), &BitTorrent::Session::trackerWarning
+        , m_transferListFiltersWidget, qOverload<BitTorrent::TorrentHandle *const, const QString &>(&TransferListFiltersWidget::trackerWarning));
 
-#ifdef Q_OS_MAC
+#ifdef Q_OS_MACOS
     // Increase top spacing to avoid tab overlapping
     m_ui->centralWidgetLayout->addSpacing(8);
 #endif
 
     m_ui->centralWidgetLayout->addWidget(m_tabs);
 
-    m_prioSeparator = m_ui->toolBar->insertSeparator(m_ui->actionTopPriority);
-    m_prioSeparatorMenu = m_ui->menuEdit->insertSeparator(m_ui->actionTopPriority);
+    m_queueSeparator = m_ui->toolBar->insertSeparator(m_ui->actionTopQueuePos);
+    m_queueSeparatorMenu = m_ui->menuEdit->insertSeparator(m_ui->actionTopQueuePos);
 
-#ifdef Q_OS_MAC
+#ifdef Q_OS_MACOS
     for (QAction *action : asConst(m_ui->toolBar->actions())) {
         if (action->isSeparator()) {
             QWidget *spacer = new QWidget(this);
@@ -303,7 +297,7 @@ MainWindow::MainWindow(QWidget *parent)
         spacer->setMinimumWidth(8);
         m_ui->toolBar->addWidget(spacer);
     }
-#endif // Q_OS_MAC
+#endif // Q_OS_MACOS
 
     // Transfer list slots
     connect(m_ui->actionStart, &QAction::triggered, m_transferListWidget, &TransferListWidget::startSelectedTorrents);
@@ -311,17 +305,17 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_ui->actionPause, &QAction::triggered, m_transferListWidget, &TransferListWidget::pauseSelectedTorrents);
     connect(m_ui->actionPauseAll, &QAction::triggered, m_transferListWidget, &TransferListWidget::pauseAllTorrents);
     connect(m_ui->actionDelete, &QAction::triggered, m_transferListWidget, &TransferListWidget::softDeleteSelectedTorrents);
-    connect(m_ui->actionTopPriority, &QAction::triggered, m_transferListWidget, &TransferListWidget::topPrioSelectedTorrents);
-    connect(m_ui->actionIncreasePriority, &QAction::triggered, m_transferListWidget, &TransferListWidget::increasePrioSelectedTorrents);
-    connect(m_ui->actionDecreasePriority, &QAction::triggered, m_transferListWidget, &TransferListWidget::decreasePrioSelectedTorrents);
-    connect(m_ui->actionBottomPriority, &QAction::triggered, m_transferListWidget, &TransferListWidget::bottomPrioSelectedTorrents);
-#ifndef Q_OS_MAC
+    connect(m_ui->actionTopQueuePos, &QAction::triggered, m_transferListWidget, &TransferListWidget::topQueuePosSelectedTorrents);
+    connect(m_ui->actionIncreaseQueuePos, &QAction::triggered, m_transferListWidget, &TransferListWidget::increaseQueuePosSelectedTorrents);
+    connect(m_ui->actionDecreaseQueuePos, &QAction::triggered, m_transferListWidget, &TransferListWidget::decreaseQueuePosSelectedTorrents);
+    connect(m_ui->actionBottomQueuePos, &QAction::triggered, m_transferListWidget, &TransferListWidget::bottomQueuePosSelectedTorrents);
+#ifndef Q_OS_MACOS
     connect(m_ui->actionToggleVisibility, &QAction::triggered, this, [this]() { toggleVisibility(); });
 #endif
     connect(m_ui->actionMinimize, &QAction::triggered, this, &MainWindow::minimizeWindow);
     connect(m_ui->actionUseAlternativeSpeedLimits, &QAction::triggered, this, &MainWindow::toggleAlternativeSpeeds);
 
-#if defined(Q_OS_WIN) || defined(Q_OS_MAC)
+#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
     m_programUpdateTimer = new QTimer(this);
     m_programUpdateTimer->setInterval(60 * 60 * 1000);
     m_programUpdateTimer->setSingleShot(true);
@@ -347,13 +341,14 @@ MainWindow::MainWindow(QWidget *parent)
     // Configure BT session according to options
     loadPreferences(false);
 
-    connect(BitTorrent::Session::instance(), &BitTorrent::Session::torrentsUpdated, this, &MainWindow::updateGUI);
+    connect(BitTorrent::Session::instance(), &BitTorrent::Session::statsUpdated, this, &MainWindow::reloadSessionStats);
+    connect(BitTorrent::Session::instance(), &BitTorrent::Session::torrentsUpdated, this, &MainWindow::reloadTorrentStats);
 
     // Accept drag 'n drops
     setAcceptDrops(true);
     createKeyboardShortcuts();
 
-#ifdef Q_OS_MAC
+#ifdef Q_OS_MACOS
     setUnifiedTitleAndToolBarOnMac(true);
 #endif
 
@@ -388,7 +383,7 @@ MainWindow::MainWindow(QWidget *parent)
     autoShutdownGroup->addAction(m_ui->actionAutoShutdown);
     autoShutdownGroup->addAction(m_ui->actionAutoSuspend);
     autoShutdownGroup->addAction(m_ui->actionAutoHibernate);
-#if (!defined(Q_OS_UNIX) || defined(Q_OS_MAC)) || defined(QT_DBUS_LIB)
+#if (!defined(Q_OS_UNIX) || defined(Q_OS_MACOS)) || defined(QT_DBUS_LIB)
     m_ui->actionAutoShutdown->setChecked(pref->shutdownWhenDownloadsComplete());
     m_ui->actionAutoSuspend->setChecked(pref->suspendWhenDownloadsComplete());
     m_ui->actionAutoHibernate->setChecked(pref->hibernateWhenDownloadsComplete());
@@ -405,7 +400,7 @@ MainWindow::MainWindow(QWidget *parent)
     // Load Window state and sizes
     readSettings();
 
-#ifndef Q_OS_MAC
+#ifndef Q_OS_MACOS
     if (m_systrayIcon) {
         if (!(pref->startMinimized() || m_uiLocked)) {
             show();
@@ -434,7 +429,7 @@ MainWindow::MainWindow(QWidget *parent)
             activateWindow();
             raise();
         }
-#ifndef Q_OS_MAC
+#ifndef Q_OS_MACOS
     }
 #endif
 
@@ -468,7 +463,7 @@ MainWindow::MainWindow(QWidget *parent)
         }
     }
 #endif
-#ifdef Q_OS_MAC
+#ifdef Q_OS_MACOS
     setupDockClickHandler();
     trayIconMenu()->setAsDockMenu();
 #endif
@@ -541,21 +536,17 @@ void MainWindow::addToolbarContextMenu()
     m_ui->toolBar->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(m_ui->toolBar, &QWidget::customContextMenuRequested, this, &MainWindow::toolbarMenuRequested);
 
-    QAction *iconsOnly = new QAction(tr("Icons Only"), m_toolbarMenu);
+    QAction *iconsOnly = m_toolbarMenu->addAction(tr("Icons Only"));
     connect(iconsOnly, &QAction::triggered, this, &MainWindow::toolbarIconsOnly);
-    QAction *textOnly = new QAction(tr("Text Only"), m_toolbarMenu);
+    QAction *textOnly = m_toolbarMenu->addAction(tr("Text Only"));
     connect(textOnly, &QAction::triggered, this, &MainWindow::toolbarTextOnly);
-    QAction *textBesideIcons = new QAction(tr("Text Alongside Icons"), m_toolbarMenu);
+    QAction *textBesideIcons =  m_toolbarMenu->addAction(tr("Text Alongside Icons"));
     connect(textBesideIcons, &QAction::triggered, this, &MainWindow::toolbarTextBeside);
-    QAction *textUnderIcons = new QAction(tr("Text Under Icons"), m_toolbarMenu);
+    QAction *textUnderIcons = m_toolbarMenu->addAction(tr("Text Under Icons"));
     connect(textUnderIcons, &QAction::triggered, this, &MainWindow::toolbarTextUnder);
-    QAction *followSystemStyle = new QAction(tr("Follow System Style"), m_toolbarMenu);
+    QAction *followSystemStyle = m_toolbarMenu->addAction(tr("Follow System Style"));
     connect(followSystemStyle, &QAction::triggered, this, &MainWindow::toolbarFollowSystem);
-    m_toolbarMenu->addAction(iconsOnly);
-    m_toolbarMenu->addAction(textOnly);
-    m_toolbarMenu->addAction(textBesideIcons);
-    m_toolbarMenu->addAction(textUnderIcons);
-    m_toolbarMenu->addAction(followSystemStyle);
+
     auto *textPositionGroup = new QActionGroup(m_toolbarMenu);
     textPositionGroup->addAction(iconsOnly);
     iconsOnly->setCheckable(true);
@@ -591,12 +582,14 @@ void MainWindow::addToolbarContextMenu()
 
 void MainWindow::manageCookies()
 {
-    CookiesDialog(this).exec();
+    auto *cookieDialog = new CookiesDialog(this);
+    cookieDialog->setAttribute(Qt::WA_DeleteOnClose);
+    cookieDialog->open();
 }
 
-void MainWindow::toolbarMenuRequested(QPoint point)
+void MainWindow::toolbarMenuRequested(const QPoint &point)
 {
-    m_toolbarMenu->exec(m_ui->toolBar->mapToGlobal(point));
+    m_toolbarMenu->popup(m_ui->toolBar->mapToGlobal(point));
 }
 
 void MainWindow::toolbarIconsOnly()
@@ -683,11 +676,11 @@ void MainWindow::displayRSSTab(bool enable)
         if (!m_rssWidget) {
             m_rssWidget = new RSSWidget(m_tabs);
             connect(m_rssWidget.data(), &RSSWidget::unreadCountUpdated, this, &MainWindow::handleRSSUnreadCountUpdated);
-#ifdef Q_OS_MAC
+#ifdef Q_OS_MACOS
             m_tabs->addTab(m_rssWidget, tr("RSS (%1)").arg(RSS::Session::instance()->rootFolder()->unreadCount()));
 #else
             const int indexTab = m_tabs->addTab(m_rssWidget, tr("RSS (%1)").arg(RSS::Session::instance()->rootFolder()->unreadCount()));
-            m_tabs->setTabIcon(indexTab, GuiIconProvider::instance()->getIcon("application-rss+xml"));
+            m_tabs->setTabIcon(indexTab, UIThemeManager::instance()->getIcon("application-rss+xml"));
 #endif
         }
     }
@@ -701,16 +694,16 @@ void MainWindow::showFilterContextMenu(const QPoint &)
     const Preferences *pref = Preferences::instance();
 
     QMenu *menu = m_searchFilter->createStandardContextMenu();
+    menu->setAttribute(Qt::WA_DeleteOnClose);
     menu->addSeparator();
-    QAction *useRegexAct = new QAction(tr("Use regular expressions"), menu);
+
+    QAction *useRegexAct = menu->addAction(tr("Use regular expressions"));
     useRegexAct->setCheckable(true);
     useRegexAct->setChecked(pref->getRegexAsFilteringPatternForTransferList());
-    menu->addAction(useRegexAct);
-
     connect(useRegexAct, &QAction::toggled, pref, &Preferences::setRegexAsFilteringPatternForTransferList);
     connect(useRegexAct, &QAction::toggled, this, [this]() { m_transferListWidget->applyNameFilter(m_searchFilter->text()); });
 
-    menu->exec(QCursor::pos());
+    menu->popup(QCursor::pos());
 }
 
 void MainWindow::displaySearchTab(bool enable)
@@ -721,8 +714,8 @@ void MainWindow::displaySearchTab(bool enable)
         if (!m_searchWidget) {
             m_searchWidget = new SearchWidget(this);
             m_tabs->insertTab(1, m_searchWidget,
-#ifndef Q_OS_MAC
-                GuiIconProvider::instance()->getIcon("edit-find"),
+#ifndef Q_OS_MACOS
+                UIThemeManager::instance()->getIcon("edit-find"),
 #endif
                 tr("Search"));
         }
@@ -785,13 +778,13 @@ void MainWindow::cleanup()
     delete m_rssWidget;
 
     delete m_executableWatcher;
-#ifndef Q_OS_MAC
+#ifndef Q_OS_MACOS
     if (m_systrayCreator)
         m_systrayCreator->stop();
 #endif
     if (m_preventTimer)
         m_preventTimer->stop();
-#if (defined(Q_OS_WIN) || defined(Q_OS_MAC))
+#if (defined(Q_OS_WIN) || defined(Q_OS_MACOS))
     m_programUpdateTimer->stop();
 #endif
 
@@ -865,23 +858,21 @@ void MainWindow::createKeyboardShortcuts()
     m_ui->actionDelete->setShortcutContext(Qt::WidgetShortcut);  // nullify its effect: delete key event is handled by respective widgets, not here
     m_ui->actionDownloadFromURL->setShortcut(Qt::CTRL + Qt::SHIFT + Qt::Key_O);
     m_ui->actionExit->setShortcut(Qt::CTRL + Qt::Key_Q);
-#ifdef Q_OS_MAC
+#ifdef Q_OS_MACOS
     m_ui->actionCloseWindow->setShortcut(QKeySequence::Close);
 #else
     m_ui->actionCloseWindow->setVisible(false);
 #endif
 
-    QShortcut *switchTransferShortcut = new QShortcut(Qt::ALT + Qt::Key_1, this);
+    const auto *switchTransferShortcut = new QShortcut(Qt::ALT + Qt::Key_1, this);
     connect(switchTransferShortcut, &QShortcut::activated, this, &MainWindow::displayTransferTab);
-
-    using Func = void (MainWindow::*)();
-    QShortcut *switchSearchShortcut = new QShortcut(Qt::ALT + Qt::Key_2, this);
-    connect(switchSearchShortcut, &QShortcut::activated, this, static_cast<Func>(&MainWindow::displaySearchTab));
-    QShortcut *switchRSSShortcut = new QShortcut(Qt::ALT + Qt::Key_3, this);
-    connect(switchRSSShortcut, &QShortcut::activated, this, static_cast<Func>(&MainWindow::displayRSSTab));
-    QShortcut *switchExecutionLogShortcut = new QShortcut(Qt::ALT + Qt::Key_4, this);
+    const auto *switchSearchShortcut = new QShortcut(Qt::ALT + Qt::Key_2, this);
+    connect(switchSearchShortcut, &QShortcut::activated, this, qOverload<>(&MainWindow::displaySearchTab));
+    const auto *switchRSSShortcut = new QShortcut(Qt::ALT + Qt::Key_3, this);
+    connect(switchRSSShortcut, &QShortcut::activated, this, qOverload<>(&MainWindow::displayRSSTab));
+    const auto *switchExecutionLogShortcut = new QShortcut(Qt::ALT + Qt::Key_4, this);
     connect(switchExecutionLogShortcut, &QShortcut::activated, this, &MainWindow::displayExecutionLogTab);
-    QShortcut *switchSearchFilterShortcut = new QShortcut(QKeySequence::Find, m_transferListWidget);
+    const auto *switchSearchFilterShortcut = new QShortcut(QKeySequence::Find, m_transferListWidget);
     connect(switchSearchFilterShortcut, &QShortcut::activated, this, &MainWindow::focusSearchFilter);
 
     m_ui->actionDocumentation->setShortcut(QKeySequence::HelpContents);
@@ -890,11 +881,11 @@ void MainWindow::createKeyboardShortcuts()
     m_ui->actionStartAll->setShortcut(Qt::CTRL + Qt::SHIFT + Qt::Key_S);
     m_ui->actionPause->setShortcut(Qt::CTRL + Qt::Key_P);
     m_ui->actionPauseAll->setShortcut(Qt::CTRL + Qt::SHIFT + Qt::Key_P);
-    m_ui->actionBottomPriority->setShortcut(Qt::CTRL + Qt::SHIFT + Qt::Key_Minus);
-    m_ui->actionDecreasePriority->setShortcut(Qt::CTRL + Qt::Key_Minus);
-    m_ui->actionIncreasePriority->setShortcut(Qt::CTRL + Qt::Key_Plus);
-    m_ui->actionTopPriority->setShortcut(Qt::CTRL + Qt::SHIFT + Qt::Key_Plus);
-#ifdef Q_OS_MAC
+    m_ui->actionBottomQueuePos->setShortcut(Qt::CTRL + Qt::SHIFT + Qt::Key_Minus);
+    m_ui->actionDecreaseQueuePos->setShortcut(Qt::CTRL + Qt::Key_Minus);
+    m_ui->actionIncreaseQueuePos->setShortcut(Qt::CTRL + Qt::Key_Plus);
+    m_ui->actionTopQueuePos->setShortcut(Qt::CTRL + Qt::SHIFT + Qt::Key_Plus);
+#ifdef Q_OS_MACOS
     m_ui->actionMinimize->setShortcut(Qt::CTRL + Qt::Key_M);
     addAction(m_ui->actionMinimize);
 #endif
@@ -1014,7 +1005,7 @@ void MainWindow::on_actionExit_triggered()
     close();
 }
 
-#ifdef Q_OS_MAC
+#ifdef Q_OS_MACOS
 void MainWindow::on_actionCloseWindow_triggered()
 {
     // On macOS window close is basically equivalent to window hide.
@@ -1073,7 +1064,7 @@ void MainWindow::notifyOfUpdate(const QString &)
     m_executableWatcher = nullptr;
 }
 
-#ifndef Q_OS_MAC
+#ifndef Q_OS_MACOS
 // Toggle Main window visibility
 void MainWindow::toggleVisibility(const QSystemTrayIcon::ActivationReason reason)
 {
@@ -1100,7 +1091,7 @@ void MainWindow::toggleVisibility(const QSystemTrayIcon::ActivationReason reason
         break;
     }
 }
-#endif // Q_OS_MAC
+#endif // Q_OS_MACOS
 
 // Display About Dialog
 void MainWindow::on_actionAbout_triggered()
@@ -1143,7 +1134,7 @@ void MainWindow::showEvent(QShowEvent *e)
 void MainWindow::closeEvent(QCloseEvent *e)
 {
     Preferences *const pref = Preferences::instance();
-#ifdef Q_OS_MAC
+#ifdef Q_OS_MACOS
     if (!m_forceExit) {
         hide();
         e->accept();
@@ -1168,7 +1159,7 @@ void MainWindow::closeEvent(QCloseEvent *e)
         }
         return;
     }
-#endif // Q_OS_MAC
+#endif // Q_OS_MACOS
 
     if (pref->confirmOnExit() && BitTorrent::Session::instance()->hasActiveTorrents()) {
         if (e->spontaneous() || m_forceExit) {
@@ -1200,7 +1191,7 @@ void MainWindow::closeEvent(QCloseEvent *e)
         delete m_searchWidget;
 
     hide();
-#ifndef Q_OS_MAC
+#ifndef Q_OS_MACOS
     // Hide tray icon
     if (m_systrayIcon)
         m_systrayIcon->hide();
@@ -1228,7 +1219,7 @@ void MainWindow::createTorrentTriggered(const QString &path)
 
 bool MainWindow::event(QEvent *e)
 {
-#ifndef Q_OS_MAC
+#ifndef Q_OS_MACOS
     switch (e->type()) {
     case QEvent::WindowStateChange: {
         qDebug("Window change event");
@@ -1273,7 +1264,7 @@ bool MainWindow::event(QEvent *e)
     default:
         break;
     }
-#endif // Q_OS_MAC
+#endif // Q_OS_MACOS
 
     return QMainWindow::event(e);
 }
@@ -1340,7 +1331,7 @@ void MainWindow::dragEnterEvent(QDragEnterEvent *event)
         event->acceptProposedAction();
 }
 
-#ifdef Q_OS_MAC
+#ifdef Q_OS_MACOS
 
 static MainWindow *dockMainWindowHandle;
 
@@ -1362,7 +1353,7 @@ void MainWindow::setupDockClickHandler()
     MacUtils::overrideDockClickHandler(dockClickHandler);
 }
 
-#endif // Q_OS_MAC
+#endif // Q_OS_MACOS
 
 /*****************************************************
 *                                                   *
@@ -1381,21 +1372,22 @@ void MainWindow::on_actionOpen_triggered()
         QFileDialog::getOpenFileNames(this, tr("Open Torrent Files"), pref->getMainLastDir(),
                                       tr("Torrent Files") + " (*" + C_TORRENT_FILE_EXTENSION + ')');
 
-    const bool useTorrentAdditionDialog = AddNewTorrentDialog::isEnabled();
-    if (!pathsList.isEmpty()) {
-        for (const QString &file : pathsList) {
-            qDebug("Dropped file %s on download list", qUtf8Printable(file));
-            if (useTorrentAdditionDialog)
-                AddNewTorrentDialog::show(file, this);
-            else
-                BitTorrent::Session::instance()->addTorrent(file);
-        }
+    if (pathsList.isEmpty())
+        return;
 
-        // Save last dir to remember it
-        QStringList topDir = Utils::Fs::fromNativePath(pathsList.at(0)).split('/');
-        topDir.removeLast();
-        pref->setMainLastDir(Utils::Fs::fromNativePath(topDir.join('/')));
+    const bool useTorrentAdditionDialog = AddNewTorrentDialog::isEnabled();
+
+    for (const QString &file : pathsList) {
+        if (useTorrentAdditionDialog)
+            AddNewTorrentDialog::show(file, this);
+        else
+            BitTorrent::Session::instance()->addTorrent(file);
     }
+
+    // Save last dir to remember it
+    QString topDir = Utils::Fs::toUniformPath(pathsList.at(0));
+    topDir = topDir.left(topDir.lastIndexOf('/'));
+    pref->setMainLastDir(topDir);
 }
 
 void MainWindow::activate()
@@ -1431,7 +1423,7 @@ void MainWindow::loadPreferences(bool configureSession)
 {
     Logger::instance()->addMessage(tr("Options were saved successfully."));
     const Preferences *const pref = Preferences::instance();
-#ifdef Q_OS_MAC
+#ifdef Q_OS_MACOS
     Q_UNUSED(configureSession);
 #else
     const bool newSystrayIntegration = pref->systrayIntegration();
@@ -1492,36 +1484,36 @@ void MainWindow::loadPreferences(bool configureSession)
 
     // Queueing System
     if (BitTorrent::Session::instance()->isQueueingSystemEnabled()) {
-        if (!m_ui->actionDecreasePriority->isVisible()) {
-            m_transferListWidget->hidePriorityColumn(false);
-            m_ui->actionDecreasePriority->setVisible(true);
-            m_ui->actionIncreasePriority->setVisible(true);
-            m_ui->actionTopPriority->setVisible(true);
-            m_ui->actionBottomPriority->setVisible(true);
-#ifndef Q_OS_MAC
-            m_prioSeparator->setVisible(true);
+        if (!m_ui->actionDecreaseQueuePos->isVisible()) {
+            m_transferListWidget->hideQueuePosColumn(false);
+            m_ui->actionDecreaseQueuePos->setVisible(true);
+            m_ui->actionIncreaseQueuePos->setVisible(true);
+            m_ui->actionTopQueuePos->setVisible(true);
+            m_ui->actionBottomQueuePos->setVisible(true);
+#ifndef Q_OS_MACOS
+            m_queueSeparator->setVisible(true);
 #endif
-            m_prioSeparatorMenu->setVisible(true);
+            m_queueSeparatorMenu->setVisible(true);
         }
     }
     else {
-        if (m_ui->actionDecreasePriority->isVisible()) {
-            m_transferListWidget->hidePriorityColumn(true);
-            m_ui->actionDecreasePriority->setVisible(false);
-            m_ui->actionIncreasePriority->setVisible(false);
-            m_ui->actionTopPriority->setVisible(false);
-            m_ui->actionBottomPriority->setVisible(false);
-#ifndef Q_OS_MAC
-            m_prioSeparator->setVisible(false);
+        if (m_ui->actionDecreaseQueuePos->isVisible()) {
+            m_transferListWidget->hideQueuePosColumn(true);
+            m_ui->actionDecreaseQueuePos->setVisible(false);
+            m_ui->actionIncreaseQueuePos->setVisible(false);
+            m_ui->actionTopQueuePos->setVisible(false);
+            m_ui->actionBottomQueuePos->setVisible(false);
+#ifndef Q_OS_MACOS
+            m_queueSeparator->setVisible(false);
 #endif
-            m_prioSeparatorMenu->setVisible(false);
+            m_queueSeparatorMenu->setVisible(false);
         }
     }
 
     // Torrent properties
     m_propertiesWidget->reloadPreferences();
 
-#if defined(Q_OS_WIN) || defined(Q_OS_MAC)
+#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
     if (pref->isUpdateCheckEnabled() && !m_wasUpdateCheckEnabled) {
         m_wasUpdateCheckEnabled = true;
         checkProgramUpdate();
@@ -1551,42 +1543,43 @@ void MainWindow::loadPreferences(bool configureSession)
     qDebug("GUI settings loaded");
 }
 
-// Check connection status and display right icon
-void MainWindow::updateGUI()
+void MainWindow::reloadSessionStats()
 {
-    if (currentTabWidget() == m_transferListWidget)
-        m_propertiesWidget->loadDynamicData();
-
     const BitTorrent::SessionStatus &status = BitTorrent::Session::instance()->status();
 
     // update global information
-#ifndef Q_OS_MAC
-    if (m_systrayIcon) {
-#ifdef Q_OS_UNIX
-        QString html = "<div style='background-color: #678db2; color: #fff;height: 18px; font-weight: bold; margin-bottom: 5px;'>";
-        html += "qBittorrent";
-        html += "</div>";
-        html += "<div style='vertical-align: baseline; height: 18px;'>";
-        html += "<img src=':/icons/skin/download.svg' height='14'/>&nbsp;" + tr("DL speed: %1", "e.g: Download speed: 10 KiB/s").arg(Utils::Misc::friendlyUnit(status.payloadDownloadRate, true));
-        html += "</div>";
-        html += "<div style='vertical-align: baseline; height: 18px;'>";
-        html += "<img src=':/icons/skin/seeding.svg' height='14'/>&nbsp;" + tr("UP speed: %1", "e.g: Upload speed: 10 KiB/s").arg(Utils::Misc::friendlyUnit(status.payloadUploadRate, true));
-        html += "</div>";
-#else
-        // OSes such as Windows do not support html here
-        QString html = tr("DL speed: %1", "e.g: Download speed: 10 KiB/s").arg(Utils::Misc::friendlyUnit(status.payloadDownloadRate, true));
-        html += '\n';
-        html += tr("UP speed: %1", "e.g: Upload speed: 10 KiB/s").arg(Utils::Misc::friendlyUnit(status.payloadUploadRate, true));
-#endif // Q_OS_UNIX
-        m_systrayIcon->setToolTip(html); // tray icon
-    }
-#else
-    if (status.payloadDownloadRate > 0)
+#ifdef Q_OS_MACOS
+    if (status.payloadDownloadRate > 0) {
         QtMac::setBadgeLabelText(tr("%1/s", "s is a shorthand for seconds")
             .arg(Utils::Misc::friendlyUnit(status.payloadDownloadRate)));
-    else if (!QtMac::badgeLabelText().isEmpty())
+    }
+    else if (!QtMac::badgeLabelText().isEmpty()) {
         QtMac::setBadgeLabelText("");
-#endif // Q_OS_MAC
+    }
+#else
+    if (m_systrayIcon) {
+#ifdef Q_OS_UNIX
+        const QString toolTip = QString(QLatin1String(
+                "<div style='background-color: #678db2; color: #fff;height: 18px; font-weight: bold; margin-bottom: 5px;'>"
+                "qBittorrent"
+                "</div>"
+                "<div style='vertical-align: baseline; height: 18px;'>"
+                "<img src=':/icons/skin/download.svg' height='14'/>&nbsp;%1"
+                "</div>"
+                "<div style='vertical-align: baseline; height: 18px;'>"
+                "<img src=':/icons/skin/seeding.svg' height='14'/>&nbsp;%2"
+                "</div>"))
+            .arg(tr("DL speed: %1", "e.g: Download speed: 10 KiB/s").arg(Utils::Misc::friendlyUnit(status.payloadDownloadRate, true))
+                 , tr("UP speed: %1", "e.g: Upload speed: 10 KiB/s").arg(Utils::Misc::friendlyUnit(status.payloadUploadRate, true)));
+#else
+        // OSes such as Windows do not support html here
+        const QString toolTip = QString("%1\n%2").arg(
+            tr("DL speed: %1", "e.g: Download speed: 10 KiB/s").arg(Utils::Misc::friendlyUnit(status.payloadDownloadRate, true))
+            , tr("UP speed: %1", "e.g: Upload speed: 10 KiB/s").arg(Utils::Misc::friendlyUnit(status.payloadUploadRate, true)));
+#endif // Q_OS_UNIX
+        m_systrayIcon->setToolTip(toolTip); // tray icon
+    }
+#endif  // Q_OS_MACOS
 
     if (m_displaySpeedInTitle) {
         setWindowTitle(tr("[D: %1, U: %2] qBittorrent %3", "D = Download; U = Upload; %3 is qBittorrent version")
@@ -1596,10 +1589,18 @@ void MainWindow::updateGUI()
     }
 }
 
+void MainWindow::reloadTorrentStats(const QVector<BitTorrent::TorrentHandle *> &torrents)
+{
+    if (currentTabWidget() == m_transferListWidget) {
+        if (torrents.contains(m_propertiesWidget->getCurrentTorrent()))
+            m_propertiesWidget->loadDynamicData();
+    }
+}
+
 void MainWindow::showNotificationBaloon(const QString &title, const QString &msg) const
 {
     if (!isNotificationsEnabled()) return;
-#if (defined(Q_OS_UNIX) && !defined(Q_OS_MAC)) && defined(QT_DBUS_LIB)
+#if (defined(Q_OS_UNIX) && !defined(Q_OS_MACOS)) && defined(QT_DBUS_LIB)
     org::freedesktop::Notifications notifications("org.freedesktop.Notifications",
                                                   "/org/freedesktop/Notifications",
                                                   QDBusConnection::sessionBus());
@@ -1619,7 +1620,7 @@ void MainWindow::showNotificationBaloon(const QString &title, const QString &msg
     reply.waitForFinished();
     if (!reply.isError())
         return;
-#elif defined(Q_OS_MAC)
+#elif defined(Q_OS_MACOS)
     MacUtils::displayNotification(title, msg);
 #else
     if (m_systrayIcon && QSystemTrayIcon::supportsMessages())
@@ -1650,7 +1651,7 @@ void MainWindow::downloadFromURLList(const QStringList &urlList)
 *                                                   *
 *****************************************************/
 
-#ifndef Q_OS_MAC
+#ifndef Q_OS_MACOS
 void MainWindow::createSystrayDelayed()
 {
     static int timeout = 20;
@@ -1693,14 +1694,14 @@ void MainWindow::createTrayIcon()
     connect(m_systrayIcon.data(), &QSystemTrayIcon::activated, this, &MainWindow::toggleVisibility);
     m_systrayIcon->show();
 }
-#endif // Q_OS_MAC
+#endif // Q_OS_MACOS
 
 QMenu *MainWindow::trayIconMenu()
 {
     if (m_trayIconMenu) return m_trayIconMenu;
 
     m_trayIconMenu = new QMenu(this);
-#ifndef Q_OS_MAC
+#ifndef Q_OS_MACOS
     connect(m_trayIconMenu.data(), &QMenu::aboutToShow, this, &MainWindow::updateTrayIconMenu);
     m_trayIconMenu->addAction(m_ui->actionToggleVisibility);
     m_trayIconMenu->addSeparator();
@@ -1717,7 +1718,7 @@ QMenu *MainWindow::trayIconMenu()
     m_trayIconMenu->addSeparator();
     m_trayIconMenu->addAction(m_ui->actionStartAll);
     m_trayIconMenu->addAction(m_ui->actionPauseAll);
-#ifndef Q_OS_MAC
+#ifndef Q_OS_MACOS
     m_trayIconMenu->addSeparator();
     m_trayIconMenu->addAction(m_ui->actionExit);
 #endif
@@ -1765,7 +1766,7 @@ void MainWindow::on_actionSpeedInTitleBar_triggered()
     m_displaySpeedInTitle = static_cast<QAction * >(sender())->isChecked();
     Preferences::instance()->showSpeedInTitleBar(m_displaySpeedInTitle);
     if (m_displaySpeedInTitle)
-        updateGUI();
+        reloadSessionStats();
     else
         setWindowTitle("qBittorrent " QBT_VERSION);
 }
@@ -1842,7 +1843,7 @@ void MainWindow::on_actionDownloadFromURL_triggered()
     }
 }
 
-#if defined(Q_OS_WIN) || defined(Q_OS_MAC)
+#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
 void MainWindow::handleUpdateCheckFinished(bool updateAvailable, QString newVersion, bool invokedByUser)
 {
     QMessageBox::StandardButton answer = QMessageBox::Yes;
@@ -1899,11 +1900,11 @@ void MainWindow::on_actionExecutionLogs_triggered(bool checked)
     if (checked) {
         Q_ASSERT(!m_executionLog);
         m_executionLog = new ExecutionLogWidget(m_tabs, static_cast<Log::MsgType>(executionLogMsgTypes()));
-#ifdef Q_OS_MAC
+#ifdef Q_OS_MACOS
         m_tabs->addTab(m_executionLog, tr("Execution Log"));
 #else
         const int indexTab = m_tabs->addTab(m_executionLog, tr("Execution Log"));
-        m_tabs->setTabIcon(indexTab, GuiIconProvider::instance()->getIcon("view-calendar-journal"));
+        m_tabs->setTabIcon(indexTab, UIThemeManager::instance()->getIcon("view-calendar-journal"));
 #endif
     }
     else if (m_executionLog) {
@@ -1988,12 +1989,12 @@ void MainWindow::updatePowerManagementState()
     m_pwr->setActivityState(inhibitSuspend);
 }
 
-#ifndef Q_OS_MAC
+#ifndef Q_OS_MACOS
 QIcon MainWindow::getSystrayIcon() const
 {
     const TrayIcon::Style style = Preferences::instance()->trayIconStyle();
     // on Linux we use theme icons, and icons from resources everywhere else
-#if (defined(Q_OS_UNIX) && !defined(Q_OS_MAC))
+#if (defined(Q_OS_UNIX) && !defined(Q_OS_MACOS))
     switch (style) {
     case TrayIcon::NORMAL:
         return QIcon::fromTheme(QLatin1String("qbittorrent-tray"));
@@ -2020,9 +2021,9 @@ QIcon MainWindow::getSystrayIcon() const
     // As a failsafe in case the enum is invalid
     return QIcon(QLatin1String(":/icons/skin/qbittorrent-tray.svg"));
 }
-#endif // Q_OS_MAC
+#endif // Q_OS_MACOS
 
-#if defined(Q_OS_WIN) || defined(Q_OS_MAC)
+#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
 void MainWindow::checkProgramUpdate()
 {
     m_programUpdateTimer->stop(); // If the user had clicked the menu item
@@ -2042,9 +2043,11 @@ void MainWindow::installPython()
 {
     setCursor(QCursor(Qt::WaitCursor));
     // Download python
-    const QString installerURL = ((QSysInfo::windowsVersion() >= QSysInfo::WV_VISTA)
-                                  ? "https://www.python.org/ftp/python/3.6.6/python-3.6.6.exe"
-                                  : "https://www.python.org/ftp/python/3.4.4/python-3.4.4.msi");
+#ifdef QBT_APP_64BIT
+    const QString installerURL = "https://www.python.org/ftp/python/3.7.4/python-3.7.4-amd64.exe";
+#else
+    const QString installerURL = "https://www.python.org/ftp/python/3.7.4/python-3.7.4.exe";
+#endif
     Net::DownloadManager::instance()->download(
                 Net::DownloadRequest(installerURL).saveToFile(true)
                 , this, &MainWindow::pythonDownloadFinished);
@@ -2065,14 +2068,8 @@ void MainWindow::pythonDownloadFinished(const Net::DownloadResult &result)
     QProcess installer;
     qDebug("Launching Python installer in passive mode...");
 
-    if (QSysInfo::windowsVersion() >= QSysInfo::WV_VISTA) {
-        QFile::rename(result.filePath, result.filePath + ".exe");
-        installer.start('"' + Utils::Fs::toNativePath(result.filePath) + ".exe\" /passive");
-    }
-    else {
-        QFile::rename(result.filePath, result.filePath + ".msi");
-        installer.start(Utils::Misc::windowsSystemPath() + "\\msiexec.exe /passive /i \"" + Utils::Fs::toNativePath(result.filePath) + ".msi\"");
-    }
+    QFile::rename(result.filePath, result.filePath + ".exe");
+    installer.start('"' + Utils::Fs::toNativePath(result.filePath) + ".exe\" /passive");
 
     // Wait for setup to complete
     installer.waitForFinished(10 * 60 * 1000);
@@ -2080,11 +2077,10 @@ void MainWindow::pythonDownloadFinished(const Net::DownloadResult &result)
     qDebug("Installer stdout: %s", installer.readAllStandardOutput().data());
     qDebug("Installer stderr: %s", installer.readAllStandardError().data());
     qDebug("Setup should be complete!");
+
     // Delete temp file
-    if (QSysInfo::windowsVersion() >= QSysInfo::WV_VISTA)
-        Utils::Fs::forceRemove(result.filePath + ".exe");
-    else
-        Utils::Fs::forceRemove(result.filePath + ".msi");
+    Utils::Fs::forceRemove(result.filePath + ".exe");
+
     // Reload search engine
     if (Utils::ForeignApps::pythonInfo().isSupportedVersion()) {
         m_ui->actionSearchWidget->setChecked(true);

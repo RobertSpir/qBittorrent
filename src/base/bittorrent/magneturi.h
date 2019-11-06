@@ -29,14 +29,15 @@
 #ifndef BITTORRENT_MAGNETURI_H
 #define BITTORRENT_MAGNETURI_H
 
-#include <QList>
-#include <QString>
-#include <QUrl>
-
 #include <libtorrent/add_torrent_params.hpp>
+
+#include <QString>
+#include <QVector>
 
 #include "infohash.h"
 #include "trackerentry.h"
+
+class QUrl;
 
 namespace BitTorrent
 {
@@ -48,8 +49,8 @@ namespace BitTorrent
         bool isValid() const;
         InfoHash hash() const;
         QString name() const;
-        QList<TrackerEntry> trackers() const;
-        QList<QUrl> urlSeeds() const;
+        QVector<TrackerEntry> trackers() const;
+        QVector<QUrl> urlSeeds() const;
         QString url() const;
 
         lt::add_torrent_params addTorrentParams() const;
@@ -59,8 +60,8 @@ namespace BitTorrent
         QString m_url;
         InfoHash m_hash;
         QString m_name;
-        QList<TrackerEntry> m_trackers;
-        QList<QUrl> m_urlSeeds;
+        QVector<TrackerEntry> m_trackers;
+        QVector<QUrl> m_urlSeeds;
         lt::add_torrent_params m_addTorrentParams;
     };
 }
