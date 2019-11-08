@@ -34,6 +34,7 @@
 #include <QPushButton>
 #include <QStandardItemModel>
 #include <QTableView>
+#include <QShowEvent>
 
 #include "base/bittorrent/torrenthandle.h"
 #include "base/preferences.h"

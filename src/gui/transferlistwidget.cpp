@@ -1179,7 +1179,7 @@ void TransferListWidget::saveSettings()
 #ifdef Q_OS_WIN
 void TransferListWidget::taskbarChanged()
 {
-    const QList<BitTorrent::TorrentHandle *> torrents = getSelectedTorrents();
+    const auto& torrents = getSelectedTorrents();
     if (torrents.size() >= 1)
         emit updateTaskbar(torrents[0]);
     else

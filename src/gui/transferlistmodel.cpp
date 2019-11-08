@@ -339,7 +339,7 @@ void TransferListModel::handleTorrentsUpdated(const QVector<BitTorrent::TorrentH
 
 // Static functions
 
-QIcon getIconByState(const BitTorrent::TorrentState state)
+QIcon TransferListModel::getIconByState(const BitTorrent::TorrentState state)
 {
     switch (state) {
     case BitTorrent::TorrentState::Downloading:

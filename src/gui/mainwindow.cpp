@@ -44,13 +44,15 @@
 #include <QTimer>
 
 #ifdef Q_OS_WIN
+#include <QOperatingSystemVersion>
 #include <QtWinExtras/QWinTaskbarButton>
 #include <QtWinExtras/QWinTaskbarProgress>
 #include <QtWinExtras/QWinThumbnailToolBar>
 #include <QtWinExtras/QWinThumbnailToolButton>
 #endif
 
-#ifdef Q_OS_MACOS#include <QtMac>
+#ifdef Q_OS_MACOS
+#include <QtMac>
 #include <QtMacExtras>
 #endif
 #if (defined(Q_OS_UNIX) && !defined(Q_OS_MACOS)) && defined(QT_DBUS_LIB)
@@ -2089,7 +2091,7 @@ void MainWindow::pythonDownloadFinished(const Net::DownloadResult &result)
 }
 void MainWindow::setupTaskbarButton()
 {
-    if (!Preferences::instance()->WinTaskbar() || m_taskbarButton || QSysInfo::windowsVersion() < QSysInfo::WV_WINDOWS7)
+    if (!Preferences::instance()->WinTaskbar() || m_taskbarButton || QOperatingSystemVersion::current() < QOperatingSystemVersion::Windows7)
         return;
     m_taskbarButton = new QWinTaskbarButton(this);
     if (m_taskbarButton) {
@@ -2099,12 +2101,12 @@ void MainWindow::setupTaskbarButton()
         m_thumbBar->setWindow(this->windowHandle());
         m_resume = new QWinThumbnailToolButton(m_thumbBar);
         m_resume->setToolTip(tr("Resume"));
-        m_resume->setIcon(GuiIconProvider::instance()->getIcon("media-playback-start"));
+        m_resume->setIcon(UIThemeManager::instance()->getIcon("media-playback-start"));
         connect(m_resume, SIGNAL(clicked()), m_transferListWidget, SLOT(startSelectedTorrents()));
 
         m_pause = new QWinThumbnailToolButton(m_thumbBar);
         m_pause->setToolTip(tr("Pause"));
-        m_pause->setIcon(GuiIconProvider::instance()->getIcon("media-playback-pause"));
+        m_pause->setIcon(UIThemeManager::instance()->getIcon("media-playback-pause"));
         connect(m_pause, SIGNAL(clicked()), m_transferListWidget, SLOT(pauseSelectedTorrents()));
 
         m_thumbBar->addButton(m_resume);
