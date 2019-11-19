@@ -1,4 +1,7 @@
 include(MacroConfigureMSVCRuntime)
 set(MSVC_RUNTIME "dynamic")
 configure_msvc_runtime()
-link_libraries(iphlpapi)
+
+# libraries from winconf.pri
+link_libraries(advapi32 crypt32 Iphlpapi ole32 shell32 User32)
+
