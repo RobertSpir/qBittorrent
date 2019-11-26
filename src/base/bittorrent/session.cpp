@@ -2507,6 +2507,9 @@ void Session::setGlobalDownloadSpeedLimit(const int limit)
 {
     // Unfortunately the value was saved as KiB instead of B.
     // But it is better to pass it around internally(+ webui) as Bytes.
+    if (limit == globalDownloadSpeedLimit())
+        return;
+
     if (limit <= 0)
         m_globalDownloadSpeedLimit = 0;
     else if (limit <= 1024)
@@ -2529,6 +2532,9 @@ void Session::setGlobalUploadSpeedLimit(const int limit)
 {
     // Unfortunately the value was saved as KiB instead of B.
     // But it is better to pass it around internally(+ webui) as Bytes.
+    if (limit == globalUploadSpeedLimit())
+        return;
+
     if (limit <= 0)
         m_globalUploadSpeedLimit = 0;
     else if (limit <= 1024)
@@ -2551,6 +2557,9 @@ void Session::setAltGlobalDownloadSpeedLimit(const int limit)
 {
     // Unfortunately the value was saved as KiB instead of B.
     // But it is better to pass it around internally(+ webui) as Bytes.
+    if (limit == altGlobalDownloadSpeedLimit())
+        return;
+
     if (limit <= 0)
         m_altGlobalDownloadSpeedLimit = 0;
     else if (limit <= 1024)
@@ -2573,6 +2582,9 @@ void Session::setAltGlobalUploadSpeedLimit(const int limit)
 {
     // Unfortunately the value was saved as KiB instead of B.
     // But it is better to pass it around internally(+ webui) as Bytes.
+    if (limit == altGlobalUploadSpeedLimit())
+        return;
+
     if (limit <= 0)
         m_altGlobalUploadSpeedLimit = 0;
     else if (limit <= 1024)
@@ -2912,6 +2924,13 @@ void Session::applyOSMemoryPriority() const
     {
         ULONG MemoryPriority;
     };
+
+#define MEMORY_PRIORITY_LOWEST 0
+#define MEMORY_PRIORITY_VERY_LOW 1
+#define MEMORY_PRIORITY_LOW 2
+#define MEMORY_PRIORITY_MEDIUM 3
+#define MEMORY_PRIORITY_BELOW_NORMAL 4
+#define MEMORY_PRIORITY_NORMAL 5
 #endif
 
     MEMORY_PRIORITY_INFORMATION prioInfo {};
