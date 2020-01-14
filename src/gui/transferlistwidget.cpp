@@ -141,6 +141,7 @@ TransferListWidget::TransferListWidget(QWidget *parent, MainWindow *mainWindow)
     m_sortFilterModel->setFilterKeyColumn(TransferListModel::TR_NAME);
     m_sortFilterModel->setFilterRole(Qt::DisplayRole);
     m_sortFilterModel->setSortCaseSensitivity(Qt::CaseInsensitive);
+    m_sortFilterModel->setSortRole(TransferListModel::UnderlyingDataRole);
 
     setModel(m_sortFilterModel);
 
@@ -1222,7 +1223,7 @@ void TransferListWidget::displayListMenu(const QPoint &)
     }
 
     // Tag Menu
-    QStringList tags(BitTorrent::Session::instance()->tags().toList());
+    QStringList tags(BitTorrent::Session::instance()->tags().values());
     std::sort(tags.begin(), tags.end(), Utils::String::naturalLessThan<Qt::CaseInsensitive>);
 
     QMenu *tagsMenu = listMenu->addMenu(UIThemeManager::instance()->getIcon("view-categories"), tr("Tags"));
