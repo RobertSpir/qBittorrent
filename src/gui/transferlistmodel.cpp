@@ -41,7 +41,7 @@
 #include "base/utils/fs.h"
 
 
-static QColor getColorByState(BitTorrent::TorrentState state, qreal ratio);
+static QColor getColorByState(BitTorrent::TorrentState state);
 
 static QIcon getPausedIcon();
 static QIcon getQueuedIcon();
@@ -68,6 +68,7 @@ TransferListModel::TransferListModel(QObject *parent)
         {BitTorrent::TorrentState::StalledDownloading, getColorByState(BitTorrent::TorrentState::StalledDownloading)},
         {BitTorrent::TorrentState::ForcedUploading, getColorByState(BitTorrent::TorrentState::ForcedUploading)},
         {BitTorrent::TorrentState::Uploading, getColorByState(BitTorrent::TorrentState::Uploading)},
+        {BitTorrent::TorrentState::UploadingGoodRatio, getColorByState(BitTorrent::TorrentState::UploadingGoodRatio)},
         {BitTorrent::TorrentState::StalledUploading, getColorByState(BitTorrent::TorrentState::StalledUploading)},
         {BitTorrent::TorrentState::CheckingResumeData, getColorByState(BitTorrent::TorrentState::CheckingResumeData)},
         {BitTorrent::TorrentState::QueuedDownloading, getColorByState(BitTorrent::TorrentState::QueuedDownloading)},
@@ -408,7 +409,7 @@ QIcon TransferListModel::getIconByState(const BitTorrent::TorrentState state)
     }
 }
 
-QColor getColorByState(const BitTorrent::TorrentState state, qreal ratio)
+QColor getColorByState(const BitTorrent::TorrentState state)
 {
     // Color names taken from http://cloford.com/resources/colours/500col.htm
     bool dark = isDarkTheme();

@@ -94,6 +94,7 @@ public:
     Qt::ItemFlags flags(const QModelIndex &index) const override;
 
     BitTorrent::TorrentHandle *torrentHandle(const QModelIndex &index) const;
+    static QIcon getIconByState(const BitTorrent::TorrentState state);
 
     void setStateForeground(BitTorrent::TorrentState state, const QColor& color);
     QColor stateForeground(BitTorrent::TorrentState state) const;
