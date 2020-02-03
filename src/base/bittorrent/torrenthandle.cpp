@@ -830,6 +830,7 @@ bool TorrentHandle::isActive() const
             || m_state == TorrentState::ForcedDownloading
             || m_state == TorrentState::Uploading
             || m_state == TorrentState::ForcedUploading
+			|| m_state == TorrentState::UploadingGoodRatio
             || m_state == TorrentState::Moving;
 }
 

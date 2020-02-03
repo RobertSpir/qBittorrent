@@ -70,6 +70,7 @@ TransferListModel::TransferListModel(QObject *parent)
           {BitTorrent::TorrentState::ForcedDownloading, tr("[F] Downloading", "Used when the torrent is forced started. You probably shouldn't translate the F.")},
           {BitTorrent::TorrentState::Allocating, tr("Allocating", "qBittorrent is allocating the files on disk")},
           {BitTorrent::TorrentState::Uploading, tr("Seeding", "Torrent is complete and in upload-only mode")},
+          {BitTorrent::TorrentState::UploadingGoodRatio, tr("Seeding", "Torrent is complete and in upload-only mode")},
           {BitTorrent::TorrentState::StalledUploading, tr("Seeding", "Torrent is complete and in upload-only mode")},
           {BitTorrent::TorrentState::ForcedUploading, tr("[F] Seeding", "Used when the torrent is forced started. You probably shouldn't translate the F.")},
           {BitTorrent::TorrentState::QueuedDownloading, tr("Queued", "Torrent is queued")},

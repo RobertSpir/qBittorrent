@@ -97,4 +97,3 @@ QSize TransferListDelegate::sizeHint(const QStyleOptionViewItem &option, const Q
     size.setHeight(std::max(nameColHeight, size.height()));
     return size;
 }
-    case BitTorrent::TorrentState::UploadingGoodRatio:
