@@ -82,6 +82,7 @@
 #include "base/torrentfileguard.h"
 #include "base/torrentfilter.h"
 #include "base/unicodestrings.h"
+#include "base/utils/bytearray.h"
 #include "base/utils/fs.h"
 #include "base/utils/misc.h"
 #include "base/utils/net.h"
@@ -156,7 +157,7 @@ namespace
         torrentParams.restored = true;
         torrentParams.skipChecking = false;
         torrentParams.name = fromLTString(root.dict_find_string_value("qBt-name"));
-        torrentParams.savePath = Profile::instance().fromPortablePath(
+        torrentParams.savePath = Profile::instance()->fromPortablePath(
             Utils::Fs::toUniformPath(fromLTString(root.dict_find_string_value("qBt-savePath"))));
         torrentParams.disableTempPath = root.dict_find_int_value("qBt-tempPathDisabled");
         torrentParams.sequential = root.dict_find_int_value("qBt-sequential");
@@ -977,8 +978,7 @@ Session::~Session()
 
     // We must delete FilterParserThread
     // before we delete lt::session
-    if (m_filterParser)
-        delete m_filterParser;
+    delete m_filterParser;
 
     // We must delete PortForwarderImpl before
     // we delete lt::session
@@ -1002,10 +1002,8 @@ void Session::initInstance()
 
 void Session::freeInstance()
 {
-    if (m_instance) {
-        delete m_instance;
-        m_instance = nullptr;
-    }
+    delete m_instance;
+    m_instance = nullptr;
 }
 
 Session *Session::instance()
@@ -1605,8 +1603,7 @@ void Session::enableTracker(const bool enable)
         m_tracker->start();
     }
     else {
-        if (m_tracker)
-            delete m_tracker;
+        delete m_tracker;
     }
 }
 
@@ -2092,6 +2089,23 @@ bool Session::addTorrent_impl(CreateTorrentParams params, const MagnetUri &magne
             patchedFastresumeData.replace("6:pausedi0e", "6:pausedi1e");
             patchedFastresumeData.replace("12:auto_managedi0e", "12:auto_managedi1e");
 
+            // converting relative save_path to absolute
+            int start = patchedFastresumeData.indexOf("9:save_path");
+            if (start > -1) {
+                start += 11;
+                const int end = patchedFastresumeData.indexOf(':', start);
+                const int len = Utils::ByteArray::midView(patchedFastresumeData, start, (end - start)).toInt();
+                if (len > 0) {
+                    const QByteArray relativePath = Utils::ByteArray::midView(patchedFastresumeData, (end + 1), len);
+                    const QByteArray absolutePath = Profile::instance()->fromPortablePath(Utils::Fs::toUniformPath(QString::fromUtf8(relativePath))).toUtf8();
+                    if (relativePath != absolutePath) {
+                        const QByteArray replaceBefore = "9:save_path" + QByteArray::number(len) + ':' + relativePath;
+                        const QByteArray replaceAfter = "9:save_path" + QByteArray::number(absolutePath.size()) + ':' + absolutePath;
+                        patchedFastresumeData.replace(replaceBefore, replaceAfter);
+                    }
+                }
+            }
+
             p.resume_data = std::vector<char> {patchedFastresumeData.constData()
                 , (patchedFastresumeData.constData() + patchedFastresumeData.size())};
             p.flags |= lt::add_torrent_params::flag_use_resume_save_path;
@@ -2255,6 +2269,7 @@ bool Session::addTorrent_impl(CreateTorrentParams params, const MagnetUri &magne
         if (params.restored) {  // load from existing fastresume
             lt::error_code ec;
             p = lt::read_resume_data(fastresumeData, ec);
+            p.save_path = Profile::instance()->fromPortablePath(Utils::Fs::toUniformPath(fromLTString(p.save_path))).toStdString();
         }
         else {  // new torrent
             if (!params.hasRootFolder)
@@ -3946,11 +3961,13 @@ void Session::initResumeFolder()
     if (resumeFolderDir.exists() || resumeFolderDir.mkpath(resumeFolderDir.absolutePath())) {
         m_resumeFolderLock->setFileName(resumeFolderDir.absoluteFilePath("session.lock"));
         if (!m_resumeFolderLock->open(QFile::WriteOnly)) {
-            throw RuntimeError {tr("Cannot write to torrent resume folder.")};
+            throw RuntimeError {tr("Cannot write to torrent resume folder: \"%1\"")
+                .arg(Utils::Fs::toNativePath(m_resumeFolderPath))};
         }
     }
     else {
-        throw RuntimeError {tr("Cannot create torrent resume folder.")};
+        throw RuntimeError {tr("Cannot create torrent resume folder: \"%1\"")
+            .arg(Utils::Fs::toNativePath(m_resumeFolderPath))};
     }
 }
 

@@ -1659,14 +1659,13 @@ void TorrentHandle::handleTrackerErrorAlert(const lt::tracker_error_alert *p)
 
     // Starting with libtorrent 1.2.x each tracker has multiple local endpoints from which
     // an announce is attempted. Some endpoints might succeed while others might fail.
-    // Emit the signal only if all endpoints have failed. TrackerEntry::isWorking() returns
-    // true if at least one endpoint works.
+    // Emit the signal only if all endpoints have failed.
     const QVector<TrackerEntry> trackerList = trackers();
     const auto iter = std::find_if(trackerList.cbegin(), trackerList.cend(), [&trackerUrl](const TrackerEntry &entry)
     {
         return (entry.url() == trackerUrl);
     });
-    if ((iter != trackerList.cend()) && !iter->isWorking())
+    if ((iter != trackerList.cend()) && (iter->status() == TrackerEntry::NotWorking))
         m_session->handleTorrentTrackerError(this, trackerUrl);
 }
 
@@ -1768,9 +1767,9 @@ void TorrentHandle::handleSaveResumeDataAlert(const lt::save_resume_data_alert *
     }
     else {
         const auto savePath = resumeData.find_key("save_path")->string();
-        resumeData["save_path"] = Profile::instance().toPortablePath(QString::fromStdString(savePath)).toStdString();
+        resumeData["save_path"] = Profile::instance()->toPortablePath(QString::fromStdString(savePath)).toStdString();
     }
-    resumeData["qBt-savePath"] = m_useAutoTMM ? "" : Profile::instance().toPortablePath(m_savePath).toStdString();
+    resumeData["qBt-savePath"] = m_useAutoTMM ? "" : Profile::instance()->toPortablePath(m_savePath).toStdString();
     resumeData["qBt-ratioLimit"] = static_cast<int>(m_ratioLimit * 1000);
     resumeData["qBt-seedingTimeLimit"] = m_seedingTimeLimit;
     resumeData["qBt-category"] = m_category.toStdString();

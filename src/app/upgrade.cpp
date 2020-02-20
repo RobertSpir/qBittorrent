@@ -82,3 +82,24 @@ bool upgrade(const bool /*ask*/)
     exportWebUIHttpsFiles();
     return true;
 }
+
+void handleChangedDefaults(const DefaultPreferencesMode mode)
+{
+    struct DefaultValue
+    {
+        QString name;
+        QVariant legacy;
+        QVariant current;
+    };
+
+    const QVector<DefaultValue> changedDefaults {
+        {QLatin1String {"BitTorrent/Session/QueueingSystemEnabled"}, true, false},
+        {QLatin1String {"BitTorrent/Session/UseRandomPort"}, false, true}
+    };
+
+    SettingsStorage *settingsStorage {SettingsStorage::instance()};
+    for (auto it = changedDefaults.cbegin(); it != changedDefaults.cend(); ++it) {
+        if (settingsStorage->loadValue(it->name).isNull())
+            settingsStorage->storeValue(it->name, (mode == DefaultPreferencesMode::Legacy ? it->legacy : it->current));
+    }
+}
