@@ -436,7 +436,7 @@ Session::Session(QObject *parent)
     , m_isBandwidthSchedulerEnabled(BITTORRENT_SESSION_KEY("BandwidthSchedulerEnabled"), false)
     , m_saveResumeDataInterval(BITTORRENT_SESSION_KEY("SaveResumeDataInterval"), 60)
     , m_port(BITTORRENT_SESSION_KEY("Port"), -1)
-    , m_useRandomPort(BITTORRENT_SESSION_KEY("UseRandomPort"), true)
+    , m_useRandomPort(BITTORRENT_SESSION_KEY("UseRandomPort"), false)
     , m_networkInterface(BITTORRENT_SESSION_KEY("Interface"))
     , m_networkInterfaceName(BITTORRENT_SESSION_KEY("InterfaceName"))
     , m_networkInterfaceAddress(BITTORRENT_SESSION_KEY("InterfaceAddress"))
@@ -3831,12 +3831,17 @@ void Session::handleTorrentMetadataReceived(TorrentHandle *const torrent)
     torrent->saveResumeData();
 
     // Save metadata
-    const QDir resumeDataDir(m_resumeFolderPath);
-    QString torrentFile = resumeDataDir.absoluteFilePath(QString("%1.torrent").arg(torrent->hash()));
-    if (torrent->saveTorrentFile(torrentFile)) {
+    const QDir resumeDataDir {m_resumeFolderPath};
+    const QString torrentFileName {QString {"%1.torrent"}.arg(torrent->hash())};
+    try {
+        torrent->info().saveToFile(resumeDataDir.absoluteFilePath(torrentFileName));
         // Copy the torrent file to the export folder
         if (!torrentExportDirectory().isEmpty())
             exportTorrentFile(torrent);
+    }
+    catch (const RuntimeError &err) {
+        LogMsg(tr("Couldn't save torrent metadata file '%1'. Reason: %2")
+               .arg(torrentFileName, err.message()), Log::CRITICAL);
     }
 
     emit torrentMetadataLoaded(torrent);
@@ -4270,6 +4275,9 @@ void Session::handleAlert(const lt::alert *a)
         case lt::file_error_alert::alert_type:
             handleFileErrorAlert(static_cast<const lt::file_error_alert*>(a));
             break;
+        case lt::read_piece_alert::alert_type:
+            handleReadPieceAlert(static_cast<const lt::read_piece_alert*>(a));
+            break;
         case lt::add_torrent_alert::alert_type:
             handleAddTorrentAlert(static_cast<const lt::add_torrent_alert*>(a));
             break;
@@ -4352,15 +4360,17 @@ void Session::createTorrentHandle(const lt::torrent_handle &nativeHandle)
         // The following is useless for newly added magnet
         if (!fromMagnetUri) {
             // Backup torrent file
-            const QDir resumeDataDir(m_resumeFolderPath);
-            const QString newFile = resumeDataDir.absoluteFilePath(QString("%1.torrent").arg(torrent->hash()));
-            if (torrent->saveTorrentFile(newFile)) {
+            const QDir resumeDataDir {m_resumeFolderPath};
+            const QString torrentFileName {QString {"%1.torrent"}.arg(torrent->hash())};
+            try {
+                torrent->info().saveToFile(resumeDataDir.absoluteFilePath(torrentFileName));
                 // Copy the torrent file to the export folder
                 if (!torrentExportDirectory().isEmpty())
                     exportTorrentFile(torrent);
             }
-            else {
-                LogMsg(tr("Couldn't save '%1.torrent'").arg(torrent->hash()), Log::CRITICAL);
+            catch (const RuntimeError &err) {
+                LogMsg(tr("Couldn't save torrent metadata file '%1'. Reason: %2")
+                       .arg(torrentFileName, err.message()), Log::CRITICAL);
             }
         }
 
@@ -4388,6 +4398,15 @@ void Session::createTorrentHandle(const lt::torrent_handle &nativeHandle)
     // Torrent could have error just after adding to libtorrent
     if (torrent->hasError())
         LogMsg(tr("Torrent errored. Torrent: \"%1\". Error: %2.").arg(torrent->name(), torrent->error()), Log::WARNING);
+
+    // Check if file(s) exist when using seed mode
+    if (params.skipChecking && torrent->hasMetadata()) {
+#if (LIBTORRENT_VERSION_NUM < 10200)
+        nativeHandle.read_piece(0);
+#else
+        nativeHandle.read_piece(lt::piece_index_t(0));
+#endif
+    }
 }
 
 void Session::handleAddTorrentAlert(const lt::add_torrent_alert *p)
@@ -4490,6 +4509,21 @@ void Session::handleFileErrorAlert(const lt::file_error_alert *p)
     }
 
     m_recentErroredTorrentsTimer->start();
+}
+
+void Session::handleReadPieceAlert(const lt::read_piece_alert *p) const
+{
+#if (LIBTORRENT_VERSION_NUM < 10200)
+    if (p->ec) {
+        p->handle.auto_managed(false);
+        p->handle.force_recheck();
+    }
+#else
+    if (p->error) {
+        p->handle.unset_flags(lt::torrent_flags::auto_managed);
+        p->handle.force_recheck();
+    }
+#endif
 }
 
 void Session::handlePortmapWarningAlert(const lt::portmap_error_alert *p)

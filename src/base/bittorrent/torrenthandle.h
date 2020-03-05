@@ -320,7 +320,6 @@ namespace BitTorrent
         void forceDHTAnnounce();
         void forceRecheck();
         void renameFile(int index, const QString &name);
-        bool saveTorrentFile(const QString &path);
         void prioritizeFiles(const QVector<DownloadPriority> &priorities);
         void setRatioLimit(qreal limit);
         void setSeedingTimeLimit(int limit);
