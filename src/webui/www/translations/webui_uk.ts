@@ -350,15 +350,15 @@
     </message>
     <message>
         <source>Name cannot be empty</source>
-        <translation type="unfinished" />
+        <translation>Назва не може бути порожньою</translation>
     </message>
     <message>
         <source>Name is unchanged</source>
-        <translation type="unfinished" />
+        <translation>Назва не змінена</translation>
     </message>
     <message>
         <source>Failed to update name</source>
-        <translation type="unfinished" />
+        <translation>Не вдалося оновити ім'я</translation>
     </message>
 </context>
 <context>
@@ -522,10 +522,42 @@
     </message>
     <message>
         <source>Your browser does not support this feature</source>
-        <translation type="unfinished" />
+        <translation>Ваш браузер не підтримує цю функцію</translation>
     </message>
     <message>
         <source>To use this feature, the WebUI needs to be accessed over HTTPS</source>
+        <translation>Щоб скористатися цією функцією, потрібно отримати доступ до веб-інтерфейсу через HTTPS</translation>
+    </message>
+    <message>
+        <source>Connection status: Firewalled</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Connection status: Connected</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Alternative speed limits: Off</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Download speed icon</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Connection status</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Alternative speed limits: On</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Upload speed icon</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Connection status: Disconnected</source>
         <translation type="unfinished" />
     </message>
 </context>
@@ -1106,10 +1138,6 @@
         <translation>При досягненні коефіцієнта роздачі</translation>
     </message>
     <message>
-        <source>sec</source>
-        <translation>с</translation>
-    </message>
-    <message>
         <source>When seeding time reaches</source>
         <translation>По досягненню часу роздачі</translation>
     </message>
@@ -1226,10 +1254,6 @@
         <translation>Фіксовані слоти</translation>
     </message>
     <message>
-        <source>Resolve peer countries (GeoIP):</source>
-        <translation>Дізнаватись країну пірів (GeoIP):</translation>
-    </message>
-    <message>
         <source>Advanced</source>
         <translation>Додатково</translation>
     </message>
@@ -1282,8 +1306,32 @@
         <translation>Перерва в сеансі:</translation>
     </message>
     <message>
-        <source>Listen on IPv6 address (requires restart):</source>
-        <translation>Слухати адресу IPv6 (потрібно перезапуск):</translation>
+        <source>Resolve peer countries:</source>
+        <translation>Дізнатися країну пірів:</translation>
+    </message>
+    <message>
+        <source>ban for:</source>
+        <translation>заборонити за:</translation>
+    </message>
+    <message>
+        <source>Use piece extent affinity (requires libtorrent &gt;= 1.2.2):</source>
+        <translation>Використовувати угруповання споріднених частин (потрібен libtorrent &gt;= 1.2.2):</translation>
+    </message>
+    <message>
+        <source>Stop tracker timeout:</source>
+        <translation>Тайм-аут зупинка трекера:</translation>
+    </message>
+    <message>
+        <source>Ban client after consecutive failures:</source>
+        <translation>Заблокувати клієнта після послідовних збоїв:</translation>
+    </message>
+    <message>
+        <source>Enable cookie Secure flag (requires HTTPS)</source>
+        <translation>Увімкнути захист cookie (потрібно HTTPS</translation>
+    </message>
+    <message>
+        <source>UPnP lease duration [0: Permanent lease]:</source>
+        <translation type="unfinished" />
     </message>
 </context>
 <context>
@@ -1345,10 +1393,6 @@
         <translation>Файли</translation>
     </message>
     <message>
-        <source>Country</source>
-        <translation>Країна</translation>
-    </message>
-    <message>
         <source>Ban peer permanently</source>
         <translation>Заблокувати піра назавжди</translation>
     </message>
@@ -1363,6 +1407,10 @@
     <message>
         <source>Add a new peer...</source>
         <translation>Додати нового піра…</translation>
+    </message>
+    <message>
+        <source>Country/Region</source>
+        <translation>Країна/Регіон</translation>
     </message>
 </context>
 <context>
@@ -1567,7 +1615,7 @@
     </message>
     <message>
         <source>Rename...</source>
-        <translation type="unfinished" />
+        <translation>Перейменувати...</translation>
     </message>
 </context>
 <context>
@@ -1744,6 +1792,30 @@
     <message>
         <source>Errored (%1)</source>
         <translation>З помилкою (%1)</translation>
+    </message>
+    <message>
+        <source>Stalled Uploading (%1)</source>
+        <translation>Затримка вивантаження (%1)</translation>
+    </message>
+    <message>
+        <source>Stalled Downloading (%1)</source>
+        <translation>Затримка завантаження (%1)</translation>
+    </message>
+    <message>
+        <source>Stalled Downloading (0)</source>
+        <translation>Затримка завантаження (0)</translation>
+    </message>
+    <message>
+        <source>Stalled (0)</source>
+        <translation>Призупинено (0)</translation>
+    </message>
+    <message>
+        <source>Stalled Uploading (0)</source>
+        <translation>Затримка вивантаження (0)</translation>
+    </message>
+    <message>
+        <source>Stalled (%1)</source>
+        <translation>Призупинено (%1)</translation>
     </message>
 </context>
 <context>
@@ -2583,11 +2655,11 @@
     </message>
     <message>
         <source>Yes</source>
-        <translation type="unfinished" />
+        <translation>Так</translation>
     </message>
     <message>
         <source>No</source>
-        <translation type="unfinished" />
+        <translation>Ні</translation>
     </message>
 </context>
 <context>
@@ -2710,10 +2782,6 @@
         <translation>Про qBittorrent</translation>
     </message>
     <message>
-        <source>Libraries</source>
-        <translation>Бібліотеки</translation>
-    </message>
-    <message>
         <source>License</source>
         <translation>Ліцензія</translation>
     </message>
@@ -2733,6 +2801,14 @@
         <source>Author</source>
         <translation>Автор</translation>
     </message>
+    <message>
+        <source>Software Used</source>
+        <translation>Використовувані програми</translation>
+    </message>
+    <message>
+        <source>The free IP to Country Lite database by DB-IP is used for resolving the countries of peers. The database is licensed under the Creative Commons Attribution 4.0 International License</source>
+        <translation>Для визначення країн пірив використовується відкрита база даних DB-IP, яка ліцензується відповідно до Creative Commons Attribution 4.0 International</translation>
+    </message>
 </context>
 <context>
     <name>OptionDialog</name>
@@ -2742,11 +2818,11 @@
     </message>
     <message>
         <source>All IPv6 addresses</source>
-        <translation type="unfinished" />
+        <translation>Всі адреси IPv6</translation>
     </message>
     <message>
         <source>All IPv4 addresses</source>
-        <translation type="unfinished" />
+        <translation>Всі адреси IPv4</translation>
     </message>
 </context>
 <context>
@@ -2780,11 +2856,11 @@
     <name>TorrentContentTreeView</name>
     <message>
         <source>Renaming</source>
-        <translation type="unfinished" />
+        <translation>Зміна назви</translation>
     </message>
     <message>
         <source>New name:</source>
-        <translation type="unfinished" />
+        <translation>Нова назва:</translation>
     </message>
 </context>
 </TS>

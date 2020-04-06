@@ -28,6 +28,8 @@
 
 #include "mainwindow.h"
 
+#include <chrono>
+
 #include <QCloseEvent>
 #include <QDebug>
 #include <QDesktopServices>
@@ -107,9 +109,6 @@
 #include "programupdater.h"
 #endif
 
-#define TIME_TRAY_BALLOON 5000
-#define PREVENT_SUSPEND_INTERVAL 60000
-
 namespace
 {
 #define SETTINGS_KEY(name) "GUI/" name
@@ -126,6 +125,9 @@ namespace
 
     // Misc
     const QString KEY_DOWNLOAD_TRACKER_FAVICON = QStringLiteral(SETTINGS_KEY("DownloadTrackerFavicon"));
+
+    const int TIME_TRAY_BALLOON = 5000;
+    const std::chrono::seconds PREVENT_SUSPEND_INTERVAL {60};
 
     // just a shortcut
     inline SettingsStorage *settings()
@@ -784,8 +786,9 @@ void MainWindow::cleanup()
     if (m_systrayCreator)
         m_systrayCreator->stop();
 #endif
-    if (m_preventTimer)
-        m_preventTimer->stop();
+
+    m_preventTimer->stop();
+
 #if (defined(Q_OS_WIN) || defined(Q_OS_MACOS))
     m_programUpdateTimer->stop();
 #endif
@@ -1420,7 +1423,7 @@ void MainWindow::showStatusBar(bool show)
     }
 }
 
-void MainWindow::loadPreferences(bool configureSession)
+void MainWindow::loadPreferences(const bool configureSession)
 {
     Logger::instance()->addMessage(tr("Options were saved successfully."));
     const Preferences *const pref = Preferences::instance();
@@ -1470,8 +1473,11 @@ void MainWindow::loadPreferences(bool configureSession)
 
     showStatusBar(pref->isStatusbarDisplayed());
 
-    if ((pref->preventFromSuspendWhenDownloading() || pref->preventFromSuspendWhenSeeding()) && !m_preventTimer->isActive()) {
-        m_preventTimer->start(PREVENT_SUSPEND_INTERVAL);
+    if (pref->preventFromSuspendWhenDownloading() || pref->preventFromSuspendWhenSeeding()) {
+        if (!m_preventTimer->isActive()) {
+            updatePowerManagementState();
+            m_preventTimer->start(PREVENT_SUSPEND_INTERVAL);
+        }
     }
     else {
         m_preventTimer->stop();
@@ -1560,7 +1566,7 @@ void MainWindow::reloadSessionStats()
 #else
     if (m_systrayIcon) {
 #ifdef Q_OS_UNIX
-        const QString toolTip = QString(QLatin1String(
+        const QString toolTip = QString::fromLatin1(
                 "<div style='background-color: #678db2; color: #fff;height: 18px; font-weight: bold; margin-bottom: 5px;'>"
                 "qBittorrent"
                 "</div>"
@@ -1569,12 +1575,12 @@ void MainWindow::reloadSessionStats()
                 "</div>"
                 "<div style='vertical-align: baseline; height: 18px;'>"
                 "<img src=':/icons/skin/seeding.svg' height='14'/>&nbsp;%2"
-                "</div>"))
+                "</div>")
             .arg(tr("DL speed: %1", "e.g: Download speed: 10 KiB/s").arg(Utils::Misc::friendlyUnit(status.payloadDownloadRate, true))
                  , tr("UP speed: %1", "e.g: Upload speed: 10 KiB/s").arg(Utils::Misc::friendlyUnit(status.payloadUploadRate, true)));
 #else
         // OSes such as Windows do not support html here
-        const QString toolTip = QString("%1\n%2").arg(
+        const QString toolTip = QString::fromLatin1("%1\n%2").arg(
             tr("DL speed: %1", "e.g: Download speed: 10 KiB/s").arg(Utils::Misc::friendlyUnit(status.payloadDownloadRate, true))
             , tr("UP speed: %1", "e.g: Upload speed: 10 KiB/s").arg(Utils::Misc::friendlyUnit(status.payloadUploadRate, true)));
 #endif // Q_OS_UNIX
@@ -1808,14 +1814,14 @@ void MainWindow::on_actionSearchWidget_triggered()
 
 #ifdef Q_OS_WIN
             const QMessageBox::StandardButton buttonPressed = QMessageBox::question(this, tr("Old Python Runtime")
-                , tr("Your Python version (%1) is outdated. Minimum requirement: 2.7.9 / 3.3.0.\nDo you want to install a newer version now?")
+                , tr("Your Python version (%1) is outdated. Minimum requirement: 3.3.0.\nDo you want to install a newer version now?")
                     .arg(pyInfo.version)
                 , (QMessageBox::Yes | QMessageBox::No), QMessageBox::Yes);
             if (buttonPressed == QMessageBox::Yes)
                 installPython();
 #else
             QMessageBox::information(this, tr("Old Python Runtime")
-                , tr("Your Python version (%1) is outdated. Please upgrade to latest version for search engines to work.\nMinimum requirement: 2.7.9 / 3.3.0.")
+                , tr("Your Python version (%1) is outdated. Please upgrade to latest version for search engines to work.\nMinimum requirement: 3.3.0.")
                 .arg(pyInfo.version));
 #endif
             return;
@@ -1853,7 +1859,7 @@ void MainWindow::handleUpdateCheckFinished(bool updateAvailable, QString newVers
         answer = QMessageBox::question(this, tr("qBittorrent Update Available")
             , tr("A new version is available.") + "<br/>"
                 + tr("Do you want to download %1?").arg(newVersion) + "<br/><br/>"
-                + QString("<a href=\"https://www.qbittorrent.org/news.php\">%1</a>").arg(tr("Open changelog..."))
+                + QString::fromLatin1("<a href=\"https://www.qbittorrent.org/news.php\">%1</a>").arg(tr("Open changelog..."))
             , QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
         if (answer == QMessageBox::Yes) {
             // The user want to update, let's download the update

@@ -338,7 +338,7 @@
     </message>
     <message>
         <source>Register to handle magnet links...</source>
-        <translation>注册处理磁力链...</translation>
+        <translation>注册以处理磁力链...</translation>
     </message>
     <message>
         <source>Unable to add peers. Please ensure you are adhering to the IP:port format.</source>
@@ -350,15 +350,15 @@
     </message>
     <message>
         <source>Name cannot be empty</source>
-        <translation type="unfinished" />
+        <translation>名称不能为空</translation>
     </message>
     <message>
         <source>Name is unchanged</source>
-        <translation type="unfinished" />
+        <translation>名称未改变</translation>
     </message>
     <message>
         <source>Failed to update name</source>
-        <translation type="unfinished" />
+        <translation>更新名称失败</translation>
     </message>
 </context>
 <context>
@@ -522,10 +522,42 @@
     </message>
     <message>
         <source>Your browser does not support this feature</source>
-        <translation type="unfinished" />
+        <translation>您的浏览器不支持此功能</translation>
     </message>
     <message>
         <source>To use this feature, the WebUI needs to be accessed over HTTPS</source>
+        <translation>要使用此功能，WebUI 需要通过 HTTPS 访问</translation>
+    </message>
+    <message>
+        <source>Connection status: Firewalled</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Connection status: Connected</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Alternative speed limits: Off</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Download speed icon</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Connection status</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Alternative speed limits: On</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Upload speed icon</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Connection status: Disconnected</source>
         <translation type="unfinished" />
     </message>
 </context>
@@ -1106,10 +1138,6 @@
         <translation>当分享率达到</translation>
     </message>
     <message>
-        <source>sec</source>
-        <translation>秒</translation>
-    </message>
-    <message>
         <source>When seeding time reaches</source>
         <translation>当做种时间达到</translation>
     </message>
@@ -1226,10 +1254,6 @@
         <translation>固定窗口数</translation>
     </message>
     <message>
-        <source>Resolve peer countries (GeoIP):</source>
-        <translation>解析用户所在地区 (GeoIP):</translation>
-    </message>
-    <message>
         <source>Advanced</source>
         <translation>高级</translation>
     </message>
@@ -1282,8 +1306,32 @@
         <translation>会话超时:</translation>
     </message>
     <message>
-        <source>Listen on IPv6 address (requires restart):</source>
-        <translation>监听 IPv6 地址（需要重启）：</translation>
+        <source>Resolve peer countries:</source>
+        <translation>解析用户所在国家：</translation>
+    </message>
+    <message>
+        <source>ban for:</source>
+        <translation>禁止：</translation>
+    </message>
+    <message>
+        <source>Use piece extent affinity (requires libtorrent &gt;= 1.2.2):</source>
+        <translation>使用块扩展数据块关联(需要libtorrent &gt;=1.2.2)：</translation>
+    </message>
+    <message>
+        <source>Stop tracker timeout:</source>
+        <translation>停止tracker超时：</translation>
+    </message>
+    <message>
+        <source>Ban client after consecutive failures:</source>
+        <translation>连续失败后禁止客户端：</translation>
+    </message>
+    <message>
+        <source>Enable cookie Secure flag (requires HTTPS)</source>
+        <translation>启用cookie安全标志（需要HTTPS）</translation>
+    </message>
+    <message>
+        <source>UPnP lease duration [0: Permanent lease]:</source>
+        <translation type="unfinished" />
     </message>
 </context>
 <context>
@@ -1345,10 +1393,6 @@
         <translation>文件</translation>
     </message>
     <message>
-        <source>Country</source>
-        <translation>国家</translation>
-    </message>
-    <message>
         <source>Ban peer permanently</source>
         <translation>永久禁止用户</translation>
     </message>
@@ -1363,6 +1407,10 @@
     <message>
         <source>Add a new peer...</source>
         <translation>添加新用户...</translation>
+    </message>
+    <message>
+        <source>Country/Region</source>
+        <translation>国家/地区</translation>
     </message>
 </context>
 <context>
@@ -1567,7 +1615,7 @@
     </message>
     <message>
         <source>Rename...</source>
-        <translation type="unfinished" />
+        <translation>重命名...</translation>
     </message>
 </context>
 <context>
@@ -1744,6 +1792,30 @@
     <message>
         <source>Errored (%1)</source>
         <translation>错误 (%1)</translation>
+    </message>
+    <message>
+        <source>Stalled Uploading (%1)</source>
+        <translation>上传已暂停 (%1)</translation>
+    </message>
+    <message>
+        <source>Stalled Downloading (%1)</source>
+        <translation>下载已暂停 (%1)</translation>
+    </message>
+    <message>
+        <source>Stalled Downloading (0)</source>
+        <translation>暂停下载 (0)</translation>
+    </message>
+    <message>
+        <source>Stalled (0)</source>
+        <translation>暂停 (0)</translation>
+    </message>
+    <message>
+        <source>Stalled Uploading (0)</source>
+        <translation>上传已暂停 (0)</translation>
+    </message>
+    <message>
+        <source>Stalled (%1)</source>
+        <translation>暂停 (%1)</translation>
     </message>
 </context>
 <context>
@@ -2583,11 +2655,11 @@
     </message>
     <message>
         <source>Yes</source>
-        <translation type="unfinished" />
+        <translation>确定</translation>
     </message>
     <message>
         <source>No</source>
-        <translation type="unfinished" />
+        <translation>取消</translation>
     </message>
 </context>
 <context>
@@ -2710,10 +2782,6 @@
         <translation>关于 qBittorrent</translation>
     </message>
     <message>
-        <source>Libraries</source>
-        <translation>库</translation>
-    </message>
-    <message>
         <source>License</source>
         <translation>许可证</translation>
     </message>
@@ -2733,6 +2801,14 @@
         <source>Author</source>
         <translation>作者</translation>
     </message>
+    <message>
+        <source>Software Used</source>
+        <translation>使用的软件</translation>
+    </message>
+    <message>
+        <source>The free IP to Country Lite database by DB-IP is used for resolving the countries of peers. The database is licensed under the Creative Commons Attribution 4.0 International License</source>
+        <translation>DB-IP提供的免费IP to Country Lite数据库用于解析节点所在的国家。 该数据库已根据知识共享署名4.0国际许可协议获得许可</translation>
+    </message>
 </context>
 <context>
     <name>OptionDialog</name>
@@ -2742,11 +2818,11 @@
     </message>
     <message>
         <source>All IPv6 addresses</source>
-        <translation type="unfinished" />
+        <translation>所有 IPv6 地址</translation>
     </message>
     <message>
         <source>All IPv4 addresses</source>
-        <translation type="unfinished" />
+        <translation>所有 IPv4 地址</translation>
     </message>
 </context>
 <context>
@@ -2780,11 +2856,11 @@
     <name>TorrentContentTreeView</name>
     <message>
         <source>Renaming</source>
-        <translation type="unfinished" />
+        <translation>重命名</translation>
     </message>
     <message>
         <source>New name:</source>
-        <translation type="unfinished" />
+        <translation>新名称：</translation>
     </message>
 </context>
 </TS>
