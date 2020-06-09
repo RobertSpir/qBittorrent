@@ -779,9 +779,9 @@
                 </widget>
                </item>
                <item>
-                <widget class="QCheckBox" name="checkCreateSubfolder">
+                <widget class="QCheckBox" name="checkKeepTopLevelFolder">
                  <property name="text">
-                  <string>Create subfolder for torrents with multiple files</string>
+                  <string>Keep top-level folder</string>
                  </property>
                  <property name="checked">
                   <bool>true</bool>
@@ -3398,7 +3398,7 @@ Use ';' to split multiple entries. Can use wildcard '*'.</string>
   <customwidget>
    <class>FileSystemPathLineEdit</class>
    <extends>QWidget</extends>
-   <header>fspathedit.h</header>
+   <header>gui/fspathedit.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

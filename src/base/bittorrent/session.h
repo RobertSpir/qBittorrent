@@ -34,6 +34,7 @@
 #include <vector>
 
 #include <libtorrent/fwd.hpp>
+#include <libtorrent/torrent_handle.hpp>
 
 #include <QHash>
 #include <QPointer>
@@ -46,6 +47,10 @@
 #include "cachestatus.h"
 #include "sessionstatus.h"
 #include "torrentinfo.h"
+
+#if ((LIBTORRENT_VERSION_NUM >= 10206) && !defined(Q_OS_WIN))
+#define HAS_HTTPS_TRACKER_VALIDATION
+#endif
 
 class QFile;
 class QNetworkConfiguration;
@@ -263,8 +268,8 @@ namespace BitTorrent
         void setPeXEnabled(bool enabled);
         bool isAddTorrentPaused() const;
         void setAddTorrentPaused(bool value);
-        bool isCreateTorrentSubfolder() const;
-        void setCreateTorrentSubfolder(bool value);
+        bool isKeepTorrentTopLevelFolder() const;
+        void setKeepTorrentTopLevelFolder(bool value);
         bool isTrackerEnabled() const;
         void setTrackerEnabled(bool enabled);
         bool isAppendExtensionEnabled() const;
@@ -401,6 +406,8 @@ namespace BitTorrent
         void setUtpMixedMode(MixedModeAlgorithm mode);
         bool multiConnectionsPerIpEnabled() const;
         void setMultiConnectionsPerIpEnabled(bool enabled);
+        bool validateHTTPSTrackerCertificate() const;
+        void setValidateHTTPSTrackerCertificate(bool enabled);
         bool isTrackerFilteringEnabled() const;
         void setTrackerFilteringEnabled(bool enabled);
         QStringList bannedIPs() const;
@@ -522,7 +529,7 @@ namespace BitTorrent
     private:
         struct MoveStorageJob
         {
-            TorrentHandleImpl *torrent;
+            lt::torrent_handle torrentHandle;
             QString path;
             MoveStorageMode mode;
         };
@@ -530,7 +537,7 @@ namespace BitTorrent
         struct RemovingTorrentData
         {
             QString name;
-            QString savePathToRemove;
+            QStringList pathsToRemove;
             DeleteOption deleteOption;
         };
 
@@ -665,12 +672,13 @@ namespace BitTorrent
         CachedSettingValue<bool> m_isUTPRateLimited;
         CachedSettingValue<MixedModeAlgorithm> m_utpMixedMode;
         CachedSettingValue<bool> m_multiConnectionsPerIpEnabled;
+        CachedSettingValue<bool> m_validateHTTPSTrackerCertificate;
         CachedSettingValue<bool> m_isAddTrackersEnabled;
         CachedSettingValue<QString> m_additionalTrackers;
         CachedSettingValue<qreal> m_globalMaxRatio;
         CachedSettingValue<int> m_globalMaxSeedingMinutes;
         CachedSettingValue<bool> m_isAddTorrentPaused;
-        CachedSettingValue<bool> m_isCreateTorrentSubfolder;
+        CachedSettingValue<bool> m_isKeepTorrentTopLevelFolder;
         CachedSettingValue<bool> m_isAppendExtensionEnabled;
         CachedSettingValue<uint> m_refreshInterval;
         CachedSettingValue<bool> m_isPreallocationEnabled;

@@ -32,7 +32,7 @@
 
 #include <libtorrent/bencode.hpp>
 #include <libtorrent/create_torrent.hpp>
-#include <libtorrent/storage.hpp>
+#include <libtorrent/file_storage.hpp>
 #include <libtorrent/torrent_info.hpp>
 #include <libtorrent/version.hpp>
 
@@ -46,7 +46,7 @@
 #include "base/utils/fs.h"
 #include "base/utils/io.h"
 #include "base/utils/string.h"
-#include "private/ltunderlyingtype.h"
+#include "ltunderlyingtype.h"
 
 namespace
 {

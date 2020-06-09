@@ -26,49 +26,24 @@
  * exception statement from your version.
  */
 
-#include "nativesessionextension.h"
+#pragma once
 
-#include <libtorrent/alert_types.hpp>
+#include <libtorrent/extensions.hpp>
+#include <libtorrent/version.hpp>
 
-#include "nativetorrentextension.h"
-
-namespace
+class NativeSessionExtension final : public lt::plugin
 {
-    void handleFastresumeRejectedAlert(const lt::fastresume_rejected_alert *alert)
-    {
-        if (alert->error.value() == lt::errors::mismatching_file_size) {
-#if (LIBTORRENT_VERSION_NUM < 10200)
-            alert->handle.auto_managed(false);
+#if (LIBTORRENT_VERSION_NUM >= 20000)
+    using ClientData = lt::client_data_t;
 #else
-            alert->handle.unset_flags(lt::torrent_flags::auto_managed);
+    using ClientData = void *;
 #endif
-            alert->handle.pause();
-        }
-    }
-}
 
 #if (LIBTORRENT_VERSION_NUM >= 10200)
-lt::feature_flags_t NativeSessionExtension::implemented_features()
-{
-    return alert_feature;
-}
-
-std::shared_ptr<lt::torrent_plugin> NativeSessionExtension::new_torrent(const lt::torrent_handle &torrentHandle, void *)
-{
-    return std::make_shared<NativeTorrentExtension>(torrentHandle);
-}
+    lt::feature_flags_t implemented_features() override;
+    std::shared_ptr<lt::torrent_plugin> new_torrent(const lt::torrent_handle &torrentHandle, ClientData) override;
 #else
-boost::shared_ptr<lt::torrent_plugin> NativeSessionExtension::new_torrent(const lt::torrent_handle &torrentHandle, void *)
-{
-    return boost::make_shared<NativeTorrentExtension>(torrentHandle);
-}
+    boost::shared_ptr<lt::torrent_plugin> new_torrent(const lt::torrent_handle &torrentHandle, ClientData) override;
 #endif
-
-void NativeSessionExtension::on_alert(const lt::alert *alert)
-{
-    switch (alert->type()) {
-    case lt::fastresume_rejected_alert::alert_type:
-        handleFastresumeRejectedAlert(static_cast<const lt::fastresume_rejected_alert *>(alert));
-        break;
-    }
-}
+    void on_alert(const lt::alert *alert) override;
+};

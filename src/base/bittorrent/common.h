@@ -28,16 +28,7 @@
 
 #pragma once
 
-#include <libtorrent/extensions.hpp>
-#include <libtorrent/version.hpp>
+#include <QString>
 
-class NativeSessionExtension final : public lt::plugin
-{
-#if (LIBTORRENT_VERSION_NUM >= 10200)
-    lt::feature_flags_t implemented_features() override;
-    std::shared_ptr<lt::torrent_plugin> new_torrent(const lt::torrent_handle &torrentHandle, void *userData) override;
-#else
-    boost::shared_ptr<lt::torrent_plugin> new_torrent(const lt::torrent_handle &torrentHandle, void *userData) override;
-#endif
-    void on_alert(const lt::alert *alert) override;
-};
+// TODO: Make it inline in C++17
+extern const QString QB_EXT;

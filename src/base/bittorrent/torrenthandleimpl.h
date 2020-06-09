@@ -43,8 +43,8 @@
 #include <QString>
 #include <QVector>
 
-#include "private/speedmonitor.h"
 #include "infohash.h"
+#include "speedmonitor.h"
 #include "torrenthandle.h"
 #include "torrentinfo.h"
 
@@ -148,7 +148,6 @@ namespace BitTorrent
         QString fileName(int index) const override;
         qlonglong fileSize(int index) const override;
         QStringList absoluteFilePaths() const override;
-        QStringList absoluteFilePathsUnwanted() const override;
         QVector<DownloadPriority> filePriorities() const override;
 
         TorrentInfo info() const override;
@@ -238,6 +237,7 @@ namespace BitTorrent
         void addUrlSeeds(const QVector<QUrl> &urlSeeds) override;
         void removeUrlSeeds(const QVector<QUrl> &urlSeeds) override;
         bool connectPeer(const PeerAddress &peerAddress) override;
+        void clearPeers() override;
 
         QString createMagnetURI() const override;
 
@@ -253,6 +253,8 @@ namespace BitTorrent
         void handleAppendExtensionToggled();
         void saveResumeData();
         void handleStorageMoved(const QString &newPath, const QString &errorMessage);
+
+        QString actualStorageLocation() const;
 
     private:
         typedef std::function<void ()> EventTrigger;
@@ -286,7 +288,6 @@ namespace BitTorrent
 
         void resume_impl(bool forced);
         bool isMoveInProgress() const;
-        QString actualStorageLocation() const;
         bool isAutoManaged() const;
         void setAutoManaged(bool enable);
 

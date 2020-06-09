@@ -99,7 +99,7 @@ void AppController::preferencesAction()
 
     // Downloads
     // When adding a torrent
-    data["create_subfolder_enabled"] = session->isCreateTorrentSubfolder();
+    data["create_subfolder_enabled"] = session->isKeepTorrentTopLevelFolder();
     data["start_paused_enabled"] = session->isAddTorrentPaused();
     data["auto_delete_mode"] = static_cast<int>(TorrentFileGuard::autoDeleteMode());
     data["preallocate_all"] = session->isPreallocationEnabled();
@@ -307,6 +307,8 @@ void AppController::preferencesAction()
     data["utp_tcp_mixed_mode"] = static_cast<int>(session->utpMixedMode());
     // Multiple connections per IP
     data["enable_multi_connections_from_same_ip"] = session->multiConnectionsPerIpEnabled();
+    // Validate HTTPS tracker certificate
+    data["validate_https_tracker_certificate"] = session->validateHTTPSTrackerCertificate();
     // Embedded tracker
     data["enable_embedded_tracker"] = session->isTrackerEnabled();
     data["embedded_tracker_port"] = pref->getTrackerPort();
@@ -342,7 +344,7 @@ void AppController::setPreferencesAction()
     // Downloads
     // When adding a torrent
     if (hasKey("create_subfolder_enabled"))
-        session->setCreateTorrentSubfolder(it.value().toBool());
+        session->setKeepTorrentTopLevelFolder(it.value().toBool());
     if (hasKey("start_paused_enabled"))
         session->setAddTorrentPaused(it.value().toBool());
     if (hasKey("auto_delete_mode"))
@@ -740,6 +742,9 @@ void AppController::setPreferencesAction()
     // Multiple connections per IP
     if (hasKey("enable_multi_connections_from_same_ip"))
         session->setMultiConnectionsPerIpEnabled(it.value().toBool());
+    // Validate HTTPS tracker certificate
+    if (hasKey("validate_https_tracker_certificate"))
+        session->setValidateHTTPSTrackerCertificate(it.value().toBool());
     // Embedded tracker
     if (hasKey("embedded_tracker_port"))
         pref->setTrackerPort(it.value().toInt());
