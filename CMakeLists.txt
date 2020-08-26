@@ -48,7 +48,7 @@ include(FeatureSummary)
 set(requiredBoostVersion 1.40)
 set(requiredQtVersion 5.9.0)
 set(requiredOpensslVersion 1.0)
-set(requiredLibtorrentVersion 1.1.10)
+set(requiredLibtorrentVersion 1.2)
 
 if (WIN32)
     include(winconf)
@@ -58,8 +58,6 @@ endif()
 # we need options here, at the top level, because they are used not only in "src" subdir, but in the "dist" dir too
 include(CompileFeature)
 
-optional_compile_definitions(COUNTRIES_RESOLUTION FEATURE DESCRIPTION "Enable resolving peers IP addresses to countries"
-    DEFAULT ON DISABLED DISABLE_COUNTRIES_RESOLUTION)
 optional_compile_definitions(STACKTRACE FEATURE DESCRIPTION "Enable stacktraces"
     DEFAULT ON ENABLED STACKTRACE)
 optional_compile_definitions(GUI FEATURE DESCRIPTION "Build GUI application"

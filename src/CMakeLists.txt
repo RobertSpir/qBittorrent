@@ -7,7 +7,7 @@ find_package(Boost ${requiredBoostVersion} REQUIRED)
 find_package(LibtorrentRasterbar ${requiredLibtorrentVersion} REQUIRED)
 find_package(OpenSSL ${requiredOpensslVersion} REQUIRED)
 
-if (Boost_VERSION VERSION_LESS 106000)
+if (Boost_VERSION_STRING VERSION_LESS 1.60.0)
     add_definitions(-DBOOST_NO_CXX11_RVALUE_REFERENCES)
 endif()
 
@@ -36,6 +36,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 # defines
 add_definitions(-DQT_DEPRECATED_WARNINGS)
 add_definitions(-DQT_NO_CAST_TO_ASCII)
+add_definitions(-DQT_NO_CAST_FROM_BYTEARRAY)
 add_definitions(-DQT_USE_QSTRINGBUILDER)
 add_definitions(-DQT_STRICT_ITERATORS)
 
