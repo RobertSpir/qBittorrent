@@ -200,6 +200,52 @@ namespace
         return expanded;
     }
 
+    QString toString(const lt::socket_type_t socketType)
+    {
+        switch (socketType)
+        {
+#if (LIBTORRENT_VERSION_NUM >= 20000)
+        case lt::socket_type_t::http:
+            return QLatin1String("HTTP");
+        case lt::socket_type_t::http_ssl:
+            return QLatin1String("HTTP_SSL");
+#endif
+        case lt::socket_type_t::i2p:
+            return QLatin1String("I2P");
+        case lt::socket_type_t::socks5:
+            return QLatin1String("SOCKS5");
+#if (LIBTORRENT_VERSION_NUM >= 20000)
+        case lt::socket_type_t::socks5_ssl:
+            return QLatin1String("SOCKS5_SSL");
+#endif
+        case lt::socket_type_t::tcp:
+            return QLatin1String("TCP");
+        case lt::socket_type_t::tcp_ssl:
+            return QLatin1String("TCP_SSL");
+#if (LIBTORRENT_VERSION_NUM >= 20000)
+        case lt::socket_type_t::utp:
+            return QLatin1String("UTP");
+#else
+        case lt::socket_type_t::udp:
+            return QLatin1String("UDP");
+#endif
+        case lt::socket_type_t::utp_ssl:
+            return QLatin1String("UTP_SSL");
+        }
+        return QLatin1String("INVALID");
+    }
+
+    QString toString(const lt::address &address)
+    {
+        try {
+            return QString::fromLatin1(address.to_string().c_str());
+        }
+        catch (const std::exception &) {
+            // suppress conversion error
+        }
+        return {};
+    }
+
     template <typename T>
     struct LowerLimited
     {
@@ -318,6 +364,7 @@ Session::Session(QObject *parent)
     , m_ignoreLimitsOnLAN(BITTORRENT_SESSION_KEY("IgnoreLimitsOnLAN"), false)
     , m_includeOverheadInLimits(BITTORRENT_SESSION_KEY("IncludeOverheadInLimits"), false)
     , m_announceIP(BITTORRENT_SESSION_KEY("AnnounceIP"))
+    , m_maxConcurrentHTTPAnnounces(BITTORRENT_SESSION_KEY("MaxConcurrentHTTPAnnounces"), 50)
 #if (LIBTORRENT_VERSION_NUM >= 10206)
     , m_stopTrackerTimeout(BITTORRENT_SESSION_KEY("StopTrackerTimeout"), 5)
 #else
@@ -375,6 +422,9 @@ Session::Session(QObject *parent)
     , m_isDisableAutoTMMWhenDefaultSavePathChanged(BITTORRENT_SESSION_KEY("DisableAutoTMMTriggers/DefaultSavePathChanged"), true)
     , m_isDisableAutoTMMWhenCategorySavePathChanged(BITTORRENT_SESSION_KEY("DisableAutoTMMTriggers/CategorySavePathChanged"), true)
     , m_isTrackerEnabled(BITTORRENT_KEY("TrackerEnabled"), false)
+    , m_peerTurnover(BITTORRENT_SESSION_KEY("PeerTurnover"), 4)
+    , m_peerTurnoverCutoff(BITTORRENT_SESSION_KEY("PeerTurnoverCutOff"), 90)
+    , m_peerTurnoverInterval(BITTORRENT_SESSION_KEY("PeerTurnoverInterval"), 300)
     , m_bannedIPs("State/BannedIPs"
                   , QStringList()
                   , [](const QStringList &value)
@@ -1003,8 +1053,13 @@ void Session::initializeNativeSession()
     pack.set_bool(lt::settings_pack::upnp_ignore_nonrouters, true);
 #endif
 
+#if (LIBTORRENT_VERSION_NUM > 20000)
+    // preserve the same behavior as in earlier libtorrent versions
+    pack.set_bool(lt::settings_pack::enable_set_file_valid_data, true);
+#endif
+
     loadLTSettings(pack);
-    m_nativeSession = new lt::session {pack, lt::session_flags_t {0}};
+    m_nativeSession = new lt::session {lt::session_params {pack, {}}};
 
     LogMsg(tr("Peer ID: ") + QString::fromStdString(peerId));
     LogMsg(tr("HTTP User-Agent is '%1'").arg(USER_AGENT));
@@ -1038,7 +1093,7 @@ void Session::processBannedIPs(lt::ip_filter &filter)
     // First, import current filter
     for (const QString &ip : asConst(m_bannedIPs.value())) {
         lt::error_code ec;
-        const lt::address addr = lt::address::from_string(ip.toLatin1().constData(), ec);
+        const lt::address addr = lt::make_address(ip.toLatin1().constData(), ec);
         Q_ASSERT(!ec);
         if (!ec)
             filter.add_rule(addr, addr, lt::ip_filter::blocked);
@@ -1208,24 +1263,31 @@ void Session::loadLTSettings(lt::settings_pack &settingsPack)
     settingsPack.set_bool(lt::settings_pack::announce_to_all_trackers, announceToAllTrackers());
     settingsPack.set_bool(lt::settings_pack::announce_to_all_tiers, announceToAllTiers());
 
+    settingsPack.set_int(lt::settings_pack::peer_turnover, peerTurnover());
+    settingsPack.set_int(lt::settings_pack::peer_turnover_cutoff, peerTurnoverCutoff());
+    settingsPack.set_int(lt::settings_pack::peer_turnover_interval, peerTurnoverInterval());
+
     settingsPack.set_int(lt::settings_pack::aio_threads, asyncIOThreads());
     settingsPack.set_int(lt::settings_pack::file_pool_size, filePoolSize());
 
     const int checkingMemUsageSize = checkingMemUsage() * 64;
     settingsPack.set_int(lt::settings_pack::checking_mem_usage, checkingMemUsageSize);
 
+#if (LIBTORRENT_VERSION_NUM < 20000)
     const int cacheSize = (diskCacheSize() > -1) ? (diskCacheSize() * 64) : -1;
     settingsPack.set_int(lt::settings_pack::cache_size, cacheSize);
     settingsPack.set_int(lt::settings_pack::cache_expiry, diskCacheTTL());
-    qDebug() << "Using a disk cache size of" << cacheSize << "MiB";
+#endif
 
     lt::settings_pack::io_buffer_mode_t mode = useOSCache() ? lt::settings_pack::enable_os_cache
                                                               : lt::settings_pack::disable_os_cache;
     settingsPack.set_int(lt::settings_pack::disk_io_read_mode, mode);
     settingsPack.set_int(lt::settings_pack::disk_io_write_mode, mode);
 
+#if (LIBTORRENT_VERSION_NUM < 20000)
     settingsPack.set_bool(lt::settings_pack::coalesce_reads, isCoalesceReadWriteEnabled());
     settingsPack.set_bool(lt::settings_pack::coalesce_writes, isCoalesceReadWriteEnabled());
+#endif
 
 #if (LIBTORRENT_VERSION_NUM >= 10202)
     settingsPack.set_bool(lt::settings_pack::piece_extent_affinity, usePieceExtentAffinity());
@@ -1272,6 +1334,10 @@ void Session::loadLTSettings(lt::settings_pack &settingsPack)
     settingsPack.set_bool(lt::settings_pack::rate_limit_ip_overhead, includeOverheadInLimits());
     // IP address to announce to trackers
     settingsPack.set_str(lt::settings_pack::announce_ip, announceIP().toStdString());
+#if (LIBTORRENT_VERSION_NUM >= 10207)
+    // Max concurrent HTTP announces
+    settingsPack.set_int(lt::settings_pack::max_concurrent_http_announces, maxConcurrentHTTPAnnounces());
+#endif
     // Stop tracker timeout
     settingsPack.set_int(lt::settings_pack::stop_tracker_timeout, stopTrackerTimeout());
     // * Max connections limit
@@ -1411,7 +1477,7 @@ void Session::configureNetworkInterfaces(lt::settings_pack &settingsPack)
 void Session::configurePeerClasses()
 {
     lt::ip_filter f;
-    // address_v4::from_string("255.255.255.255") crashes on some people's systems
+    // lt::make_address("255.255.255.255") crashes on some people's systems
     // so instead we use address_v4::broadcast()
     // Proactively do the same for 0.0.0.0 and address_v4::any()
     f.add_rule(lt::address_v4::any()
@@ -1423,29 +1489,29 @@ void Session::configurePeerClasses()
     // Affects Windows XP
     try {
         f.add_rule(lt::address_v6::any()
-                   , lt::address_v6::from_string("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff")
+                   , lt::make_address("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff")
                    , 1 << static_cast<LTUnderlyingType<lt::peer_class_t>>(lt::session::global_peer_class_id));
     }
     catch (const std::exception &) {}
 
     if (ignoreLimitsOnLAN()) {
         // local networks
-        f.add_rule(lt::address_v4::from_string("10.0.0.0")
-                   , lt::address_v4::from_string("10.255.255.255")
+        f.add_rule(lt::make_address("10.0.0.0")
+                   , lt::make_address("10.255.255.255")
                    , 1 << static_cast<LTUnderlyingType<lt::peer_class_t>>(lt::session::local_peer_class_id));
-        f.add_rule(lt::address_v4::from_string("172.16.0.0")
-                   , lt::address_v4::from_string("172.31.255.255")
+        f.add_rule(lt::make_address("172.16.0.0")
+                   , lt::make_address("172.31.255.255")
                    , 1 << static_cast<LTUnderlyingType<lt::peer_class_t>>(lt::session::local_peer_class_id));
-        f.add_rule(lt::address_v4::from_string("192.168.0.0")
-                   , lt::address_v4::from_string("192.168.255.255")
+        f.add_rule(lt::make_address("192.168.0.0")
+                   , lt::make_address("192.168.255.255")
                    , 1 << static_cast<LTUnderlyingType<lt::peer_class_t>>(lt::session::local_peer_class_id));
         // link local
-        f.add_rule(lt::address_v4::from_string("169.254.0.0")
-                   , lt::address_v4::from_string("169.254.255.255")
+        f.add_rule(lt::make_address("169.254.0.0")
+                   , lt::make_address("169.254.255.255")
                    , 1 << static_cast<LTUnderlyingType<lt::peer_class_t>>(lt::session::local_peer_class_id));
         // loopback
-        f.add_rule(lt::address_v4::from_string("127.0.0.0")
-                   , lt::address_v4::from_string("127.255.255.255")
+        f.add_rule(lt::make_address("127.0.0.0")
+                   , lt::make_address("127.255.255.255")
                    , 1 << static_cast<LTUnderlyingType<lt::peer_class_t>>(lt::session::local_peer_class_id));
 
         // IPv6 may not be available on OS and the parsing
@@ -1453,12 +1519,12 @@ void Session::configurePeerClasses()
         // Affects Windows XP
         try {
             // link local
-            f.add_rule(lt::address_v6::from_string("fe80::")
-                       , lt::address_v6::from_string("febf:ffff:ffff:ffff:ffff:ffff:ffff:ffff")
+            f.add_rule(lt::make_address("fe80::")
+                       , lt::make_address("febf:ffff:ffff:ffff:ffff:ffff:ffff:ffff")
                        , 1 << static_cast<LTUnderlyingType<lt::peer_class_t>>(lt::session::local_peer_class_id));
             // unique local addresses
-            f.add_rule(lt::address_v6::from_string("fc00::")
-                       , lt::address_v6::from_string("fdff:ffff:ffff:ffff:ffff:ffff:ffff:ffff")
+            f.add_rule(lt::make_address("fc00::")
+                       , lt::make_address("fdff:ffff:ffff:ffff:ffff:ffff:ffff:ffff")
                        , 1 << static_cast<LTUnderlyingType<lt::peer_class_t>>(lt::session::local_peer_class_id));
             // loopback
             f.add_rule(lt::address_v6::loopback()
@@ -1644,7 +1710,7 @@ void Session::banIP(const QString &ip)
     if (!bannedIPs.contains(ip)) {
         lt::ip_filter filter = m_nativeSession->get_ip_filter();
         lt::error_code ec;
-        const lt::address addr = lt::address::from_string(ip.toLatin1().constData(), ec);
+        const lt::address addr = lt::make_address(ip.toLatin1().constData(), ec);
         Q_ASSERT(!ec);
         if (ec) return;
         filter.add_rule(addr, addr, lt::ip_filter::blocked);
@@ -1728,18 +1794,9 @@ bool Session::cancelLoadMetadata(const InfoHash &hash)
     if (loadedMetadataIter == m_loadedMetadata.end()) return false;
 
     m_loadedMetadata.erase(loadedMetadataIter);
-    const lt::torrent_handle torrent = m_nativeSession->find_torrent(hash);
-    if (!torrent.is_valid()) return false;
-
-    if (!torrent.status(lt::status_flags_t {0}).has_metadata) {
-        // if hidden torrent is still loading metadata...
-        --m_extraLimit;
-        adjustLimits();
-    }
-
-    // Remove it from session
-    m_nativeSession->remove_torrent(torrent, lt::session::delete_files);
-    qDebug("Preloaded torrent deleted.");
+    --m_extraLimit;
+    adjustLimits();
+    m_nativeSession->remove_torrent(m_nativeSession->find_torrent(hash), lt::session::delete_files);
     return true;
 }
 
@@ -1787,7 +1844,7 @@ void Session::decreaseTorrentsQueuePos(const QVector<InfoHash> &hashes)
     }
 
     for (auto i = m_loadedMetadata.cbegin(); i != m_loadedMetadata.cend(); ++i)
-        torrentQueuePositionBottom(m_nativeSession->find_torrent(i.key()));
+        torrentQueuePositionBottom(m_nativeSession->find_torrent(*i));
 
     saveTorrentsQueue();
 }
@@ -1836,7 +1893,7 @@ void Session::bottomTorrentsQueuePos(const QVector<InfoHash> &hashes)
     }
 
     for (auto i = m_loadedMetadata.cbegin(); i != m_loadedMetadata.cend(); ++i)
-        torrentQueuePositionBottom(m_nativeSession->find_torrent(i.key()));
+        torrentQueuePositionBottom(m_nativeSession->find_torrent(*i));
 
     saveTorrentsQueue();
 }
@@ -1891,42 +1948,14 @@ bool Session::addTorrent(const MagnetUri &magnetUri, const AddTorrentParams &par
 
     const auto it = m_loadedMetadata.constFind(hash);
     if (it != m_loadedMetadata.constEnd()) {
-        // Adding preloaded torrent...
-        const TorrentInfo metadata = it->metadata;
-        if (metadata.isValid()) {
-            // Metadata is received and torrent_handle is being deleted
-            // so we can't reuse it. Just add torrent using its metadata.
-            return addTorrent(metadata, params);
-        }
-
-        // Reuse existing torrent_handle
-        lt::torrent_handle handle = m_nativeSession->find_torrent(hash);
-
-        // Preloaded torrent is in "Upload mode" so we need to disable it
-        // otherwise the torrent never be downloaded (until application restart)
-        handle.unset_flags(lt::torrent_flags::upload_mode);
-
-        LoadTorrentParams createTorrentParams = initLoadTorrentParams(params);
-        createTorrentParams.ltAddTorrentParams = it->ltAddTorrentParams;
-
-        if (createTorrentParams.paused) {
-            // Preloaded torrent isn't auto managed already
-            handle.pause();
-        }
-        else if (!createTorrentParams.forced) {
-            handle.set_flags(lt::torrent_flags::auto_managed);
-            handle.pause();
-        }
-
-        m_loadedMetadata.remove(hash);
-        m_loadingTorrents.insert(hash, createTorrentParams);
-
+        // It looks illogical that we don't just use an existing handle,
+        // but as previous experience has shown, it actually creates unnecessary
+        // problems and unwanted behavior due to the fact that it was originally
+        // added with parameters other than those provided by the user.
+        m_loadedMetadata.erase(it);
         --m_extraLimit;
         adjustLimits();
-
-        // use common last step of torrent loading
-        createTorrentHandle(handle);
-        return true;
+        m_nativeSession->remove_torrent(m_nativeSession->find_torrent(hash), lt::session::delete_files);
     }
 
     return addTorrent_impl(params, magnetUri);
@@ -2034,6 +2063,10 @@ bool Session::addTorrent_impl(const AddTorrentParams &addTorrentParams, const Ma
     }
     else {
         p = magnetUri.addTorrentParams();
+
+        if (loadTorrentParams.name.isEmpty() && !p.name.empty())
+            loadTorrentParams.name = QString::fromStdString(p.name);
+
         if (isTempPathEnabled())
             actualSavePath = tempPath();
     }
@@ -2164,7 +2197,7 @@ bool Session::loadMetadata(const MagnetUri &magnetUri)
     if (ec) return false;
 
     // waiting for metadata...
-    m_loadedMetadata.insert(h.info_hash(), {p, TorrentInfo {}});
+    m_loadedMetadata.insert(h.info_hash());
     ++m_extraLimit;
     adjustLimits();
 
@@ -2934,6 +2967,48 @@ void Session::setAnnounceToAllTiers(const bool val)
     }
 }
 
+int Session::peerTurnover() const
+{
+    return m_peerTurnover;
+}
+
+void Session::setPeerTurnover(const int val)
+{
+    if (val == m_peerTurnover)
+        return;
+
+    m_peerTurnover = val;
+    configureDeferred();
+}
+
+int Session::peerTurnoverCutoff() const
+{
+    return m_peerTurnoverCutoff;
+}
+
+void Session::setPeerTurnoverCutoff(const int val)
+{
+    if (val == m_peerTurnoverCutoff)
+        return;
+
+    m_peerTurnoverCutoff = val;
+    configureDeferred();
+}
+
+int Session::peerTurnoverInterval() const
+{
+    return m_peerTurnoverInterval;
+}
+
+void Session::setPeerTurnoverInterval(const int val)
+{
+    if (val == m_peerTurnoverInterval)
+        return;
+
+    m_peerTurnoverInterval = val;
+    configureDeferred();
+}
+
 int Session::asyncIOThreads() const
 {
     return qBound(1, m_asyncIOThreads.value(), 1024);
@@ -3326,6 +3401,20 @@ void Session::setAnnounceIP(const QString &ip)
         m_announceIP = ip;
         configureDeferred();
     }
+}
+
+int Session::maxConcurrentHTTPAnnounces() const
+{
+    return m_maxConcurrentHTTPAnnounces;
+}
+
+void Session::setMaxConcurrentHTTPAnnounces(const int value)
+{
+    if (value == m_maxConcurrentHTTPAnnounces)
+        return;
+
+    m_maxConcurrentHTTPAnnounces = value;
+    configureDeferred();
 }
 
 int Session::stopTrackerTimeout() const
@@ -3953,6 +4042,10 @@ bool Session::loadTorrentResumeData(const QByteArray &data, const TorrentInfo &m
             const lt::bdecode_node addedTimeNode = root.dict_find("qBt-addedTime");
             if (addedTimeNode.type() == lt::bdecode_node::int_t)
                 p.added_time = addedTimeNode.int_value();
+
+            if (torrentParams.name.isEmpty() && !p.name.empty())
+                torrentParams.name = QString::fromStdString(p.name);
+
         }
         // === END DEPRECATED CODE === //
         else {
@@ -4291,12 +4384,6 @@ void Session::handleTorrentRemovedAlert(const lt::torrent_removed_alert *p)
 {
     const InfoHash infoHash {p->info_hash};
 
-    const auto loadedMetadataIter = m_loadedMetadata.find(infoHash);
-    if (loadedMetadataIter != m_loadedMetadata.end()) {
-        emit metadataLoaded(loadedMetadataIter->metadata);
-        m_loadedMetadata.erase(loadedMetadataIter);
-    }
-
     const auto removingTorrentDataIter = m_removingTorrents.find(infoHash);
     if (removingTorrentDataIter != m_removingTorrents.end()) {
         if (removingTorrentDataIter->deleteOption == Torrent) {
@@ -4348,10 +4435,14 @@ void Session::handleMetadataReceivedAlert(const lt::metadata_received_alert *p)
     const auto loadedMetadataIter = m_loadedMetadata.find(hash);
 
     if (loadedMetadataIter != m_loadedMetadata.end()) {
+        TorrentInfo metadata {p->handle.torrent_file()};
+
+        m_loadedMetadata.erase(loadedMetadataIter);
         --m_extraLimit;
         adjustLimits();
-        loadedMetadataIter->metadata = TorrentInfo {p->handle.torrent_file()};
         m_nativeSession->remove_torrent(p->handle, lt::session::delete_files);
+
+        emit metadataLoaded(metadata);
     }
 }
 
@@ -4399,8 +4490,6 @@ void Session::handlePortmapAlert(const lt::portmap_alert *p)
 
 void Session::handlePeerBlockedAlert(const lt::peer_blocked_alert *p)
 {
-    lt::error_code ec;
-    const std::string ip = p->endpoint.address().to_string(ec);
     QString reason;
     switch (p->reason) {
     case lt::peer_blocked_alert::ip_filter:
@@ -4423,17 +4512,16 @@ void Session::handlePeerBlockedAlert(const lt::peer_blocked_alert *p)
         break;
     }
 
-    if (!ec)
-        Logger::instance()->addPeer(QString::fromLatin1(ip.c_str()), true, reason);
+    const QString ip {toString(p->endpoint.address())};
+    if (!ip.isEmpty())
+        Logger::instance()->addPeer(ip, true, reason);
 }
 
 void Session::handlePeerBanAlert(const lt::peer_ban_alert *p)
 {
-    lt::error_code ec;
-    const std::string ip = p->endpoint.address().to_string(ec);
-
-    if (!ec)
-        Logger::instance()->addPeer(QString::fromLatin1(ip.c_str()), false);
+    const QString ip {toString(p->endpoint.address())};
+    if (!ip.isEmpty())
+        Logger::instance()->addPeer(ip, false);
 }
 
 void Session::handleUrlSeedAlert(const lt::url_seed_alert *p)
@@ -4456,33 +4544,10 @@ void Session::handleUrlSeedAlert(const lt::url_seed_alert *p)
 
 void Session::handleListenSucceededAlert(const lt::listen_succeeded_alert *p)
 {
-    QString proto = "INVALID";
-    switch (p->socket_type)
-    {
-    case lt::socket_type_t::udp:
-        proto = "UDP";
-        break;
-    case lt::socket_type_t::tcp:
-        proto = "TCP";
-        break;
-    case lt::socket_type_t::tcp_ssl:
-        proto = "TCP_SSL";
-        break;
-    case lt::socket_type_t::i2p:
-        proto = "I2P";
-        break;
-    case lt::socket_type_t::socks5:
-        proto = "SOCKS5";
-        break;
-    case lt::socket_type_t::utp_ssl:
-        proto = "UTP_SSL";
-        break;
-    }
-
-    lt::error_code ec;
+    const QString proto {toString(p->socket_type)};
     LogMsg(tr("Successfully listening on IP: %1, port: %2/%3"
               , "e.g: Successfully listening on IP: 192.168.0.1, port: TCP/6881")
-            .arg(p->address.to_string(ec).c_str(), proto, QString::number(p->port)), Log::INFO);
+            .arg(toString(p->address), proto, QString::number(p->port)), Log::INFO);
 
     // Force reannounce on all torrents because some trackers blacklist some ports
     for (const lt::torrent_handle &torrent : m_nativeSession->get_torrents())
@@ -4491,41 +4556,17 @@ void Session::handleListenSucceededAlert(const lt::listen_succeeded_alert *p)
 
 void Session::handleListenFailedAlert(const lt::listen_failed_alert *p)
 {
-    QString proto = "INVALID";
-    switch (p->socket_type)
-    {
-    case lt::socket_type_t::udp:
-        proto = "UDP";
-        break;
-    case lt::socket_type_t::tcp:
-        proto = "TCP";
-        break;
-    case lt::socket_type_t::tcp_ssl:
-        proto = "TCP_SSL";
-        break;
-    case lt::socket_type_t::i2p:
-        proto = "I2P";
-        break;
-    case lt::socket_type_t::socks5:
-        proto = "SOCKS5";
-        break;
-    case lt::socket_type_t::utp_ssl:
-        proto = "UTP_SSL";
-        break;
-    }
-
-    lt::error_code ec;
+    const QString proto {toString(p->socket_type)};
     LogMsg(tr("Failed to listen on IP: %1, port: %2/%3. Reason: %4"
               , "e.g: Failed to listen on IP: 192.168.0.1, port: TCP/6881. Reason: already in use")
-        .arg(p->address.to_string(ec).c_str(), proto, QString::number(p->port)
+        .arg(toString(p->address), proto, QString::number(p->port)
             , QString::fromLocal8Bit(p->error.message().c_str())), Log::CRITICAL);
 }
 
 void Session::handleExternalIPAlert(const lt::external_ip_alert *p)
 {
-    lt::error_code ec;
     LogMsg(tr("Detected external IP: %1", "e.g. Detected external IP: 1.1.1.1")
-        .arg(p->external_address.to_string(ec).c_str()), Log::INFO);
+        .arg(toString(p->external_address)), Log::INFO);
 }
 
 void Session::handleSessionStatsAlert(const lt::session_stats_alert *p)

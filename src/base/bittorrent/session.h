@@ -334,6 +334,12 @@ namespace BitTorrent
         void setAnnounceToAllTrackers(bool val);
         bool announceToAllTiers() const;
         void setAnnounceToAllTiers(bool val);
+        int peerTurnover() const;
+        void setPeerTurnover(int num);
+        int peerTurnoverCutoff() const;
+        void setPeerTurnoverCutoff(int num);
+        int peerTurnoverInterval() const;
+        void setPeerTurnoverInterval(int num);
         int asyncIOThreads() const;
         void setAsyncIOThreads(int num);
         int filePoolSize() const;
@@ -384,6 +390,8 @@ namespace BitTorrent
         void setIncludeOverheadInLimits(bool include);
         QString announceIP() const;
         void setAnnounceIP(const QString &ip);
+        int maxConcurrentHTTPAnnounces() const;
+        void setMaxConcurrentHTTPAnnounces(int value);
         int stopTrackerTimeout() const;
         void setStopTrackerTimeout(int value);
         int maxConnections() const;
@@ -668,6 +676,7 @@ namespace BitTorrent
         CachedSettingValue<bool> m_ignoreLimitsOnLAN;
         CachedSettingValue<bool> m_includeOverheadInLimits;
         CachedSettingValue<QString> m_announceIP;
+        CachedSettingValue<int> m_maxConcurrentHTTPAnnounces;
         CachedSettingValue<int> m_stopTrackerTimeout;
         CachedSettingValue<int> m_maxConnections;
         CachedSettingValue<int> m_maxUploads;
@@ -717,6 +726,9 @@ namespace BitTorrent
         CachedSettingValue<bool> m_isDisableAutoTMMWhenDefaultSavePathChanged;
         CachedSettingValue<bool> m_isDisableAutoTMMWhenCategorySavePathChanged;
         CachedSettingValue<bool> m_isTrackerEnabled;
+        CachedSettingValue<int> m_peerTurnover;
+        CachedSettingValue<int> m_peerTurnoverCutoff;
+        CachedSettingValue<int> m_peerTurnoverInterval;
         CachedSettingValue<QStringList> m_bannedIPs;
 #if defined(Q_OS_WIN)
         CachedSettingValue<OSMemoryPriority> m_OSMemoryPriority;
@@ -746,12 +758,7 @@ namespace BitTorrent
         QThread *m_ioThread = nullptr;
         ResumeDataSavingManager *m_resumeDataSavingManager = nullptr;
 
-        struct LoadedMetadataHandle
-        {
-            lt::add_torrent_params ltAddTorrentParams {};
-            TorrentInfo metadata;
-        };
-        QHash<InfoHash, LoadedMetadataHandle> m_loadedMetadata;
+        QSet<InfoHash> m_loadedMetadata;
 
         QHash<InfoHash, TorrentHandleImpl *> m_torrents;
         QHash<InfoHash, LoadTorrentParams> m_loadingTorrents;

@@ -320,8 +320,12 @@ void AppController::preferencesAction()
     data["announce_to_all_trackers"] = session->announceToAllTrackers();
     data["announce_to_all_tiers"] = session->announceToAllTiers();
     data["announce_ip"] = session->announceIP();
-    // Stop tracker timeout
+    data["max_concurrent_http_announces"] = session->maxConcurrentHTTPAnnounces();
     data["stop_tracker_timeout"] = session->stopTrackerTimeout();
+    // Peer Turnover
+    data["peer_turnover"] = session->peerTurnover();
+    data["peer_turnover_cutoff"] = session->peerTurnoverCutoff();
+    data["peer_turnover_interval"] = session->peerTurnoverInterval();
 
     setResult(data);
 }
@@ -765,9 +769,17 @@ void AppController::setPreferencesAction()
         const QHostAddress announceAddr {it.value().toString().trimmed()};
         session->setAnnounceIP(announceAddr.isNull() ? QString {} : announceAddr.toString());
     }
-    // Stop tracker timeout
+    if (hasKey("max_concurrent_http_announces"))
+        session->setMaxConcurrentHTTPAnnounces(it.value().toInt());
     if (hasKey("stop_tracker_timeout"))
         session->setStopTrackerTimeout(it.value().toInt());
+    // Peer Turnover
+    if (hasKey("peer_turnover"))
+        session->setPeerTurnover(it.value().toInt());
+    if (hasKey("peer_turnover_cutoff"))
+        session->setPeerTurnoverCutoff(it.value().toInt());
+    if (hasKey("peer_turnover_interval"))
+        session->setPeerTurnoverInterval(it.value().toInt());
 
     // Save preferences
     pref->apply();
