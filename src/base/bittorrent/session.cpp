@@ -381,6 +381,7 @@ Session::Session(QObject *parent)
         , clampValue(MixedModeAlgorithm::TCP, MixedModeAlgorithm::Proportional))
     , m_multiConnectionsPerIpEnabled(BITTORRENT_SESSION_KEY("MultiConnectionsPerIp"), false)
     , m_validateHTTPSTrackerCertificate(BITTORRENT_SESSION_KEY("ValidateHTTPSTrackerCertificate"), false)
+    , m_blockPeersOnPrivilegedPorts(BITTORRENT_SESSION_KEY("BlockPeersOnPrivilegedPorts"), false)
     , m_isAddTrackersEnabled(BITTORRENT_SESSION_KEY("AddTrackersEnabled"), false)
     , m_additionalTrackers(BITTORRENT_SESSION_KEY("AdditionalTrackers"))
     , m_globalMaxRatio(BITTORRENT_SESSION_KEY("GlobalMaxRatio"), -1, [](qreal r) { return r < 0 ? -1. : r;})
@@ -1044,7 +1045,6 @@ void Session::initializeNativeSession()
     pack.set_int(lt::settings_pack::auto_scrape_interval, 1200); // 20 minutes
     pack.set_int(lt::settings_pack::auto_scrape_min_interval, 900); // 15 minutes
     pack.set_int(lt::settings_pack::connection_speed, 20); // default is 10
-    pack.set_bool(lt::settings_pack::no_connect_privileged_ports, false);
     // libtorrent 1.1 enables UPnP & NAT-PMP by default
     // turn them off before `lt::session` ctor to avoid split second effects
     pack.set_bool(lt::settings_pack::enable_upnp, false);
@@ -1384,6 +1384,8 @@ void Session::loadLTSettings(lt::settings_pack &settingsPack)
 #ifdef HAS_HTTPS_TRACKER_VALIDATION
     settingsPack.set_bool(lt::settings_pack::validate_https_trackers, validateHTTPSTrackerCertificate());
 #endif
+
+    settingsPack.set_bool(lt::settings_pack::no_connect_privileged_ports, blockPeersOnPrivilegedPorts());
 
     settingsPack.set_bool(lt::settings_pack::apply_ip_filter_to_trackers, isTrackerFilteringEnabled());
 
@@ -1974,7 +1976,6 @@ LoadTorrentParams Session::initLoadTorrentParams(const AddTorrentParams &addTorr
 
     loadTorrentParams.name = addTorrentParams.name;
     loadTorrentParams.tags = addTorrentParams.tags;
-    loadTorrentParams.sequential = addTorrentParams.sequential;
     loadTorrentParams.firstLastPiecePriority = addTorrentParams.firstLastPiecePriority;
     loadTorrentParams.hasSeedStatus = addTorrentParams.skipChecking; // do not react on 'torrent_finished_alert' when skipping
     loadTorrentParams.hasRootFolder = ((addTorrentParams.createSubfolder == TriStateBool::Undefined)
@@ -2078,6 +2079,11 @@ bool Session::addTorrent_impl(const AddTorrentParams &addTorrentParams, const Ma
 
     // Preallocation mode
     p.storage_mode = isPreallocationEnabled() ? lt::storage_mode_allocate : lt::storage_mode_sparse;
+
+    if (addTorrentParams.sequential)
+        p.flags |= lt::torrent_flags::sequential_download;
+    else
+        p.flags &= ~lt::torrent_flags::sequential_download;
 
     // Seeding mode
     // Skip checking and directly start seeding
@@ -3527,6 +3533,19 @@ void Session::setValidateHTTPSTrackerCertificate(const bool enabled)
     configureDeferred();
 }
 
+bool Session::blockPeersOnPrivilegedPorts() const
+{
+    return m_blockPeersOnPrivilegedPorts;
+}
+
+void Session::setBlockPeersOnPrivilegedPorts(const bool enabled)
+{
+    if (enabled == m_blockPeersOnPrivilegedPorts) return;
+
+    m_blockPeersOnPrivilegedPorts = enabled;
+    configureDeferred();
+}
+
 bool Session::isTrackerFilteringEnabled() const
 {
     return m_isTrackerFilteringEnabled;
@@ -3983,7 +4002,6 @@ bool Session::loadTorrentResumeData(const QByteArray &data, const TorrentInfo &m
     torrentParams.name = fromLTString(root.dict_find_string_value("qBt-name"));
     torrentParams.savePath = Profile::instance()->fromPortablePath(
         Utils::Fs::toUniformPath(fromLTString(root.dict_find_string_value("qBt-savePath"))));
-    torrentParams.sequential = root.dict_find_int_value("qBt-sequential");
     torrentParams.hasSeedStatus = root.dict_find_int_value("qBt-seedStatus");
     torrentParams.firstLastPiecePriority = root.dict_find_int_value("qBt-firstLastPiecePriority");
     torrentParams.hasRootFolder = root.dict_find_int_value("qBt-hasRootFolder");
@@ -4043,9 +4061,16 @@ bool Session::loadTorrentResumeData(const QByteArray &data, const TorrentInfo &m
             if (addedTimeNode.type() == lt::bdecode_node::int_t)
                 p.added_time = addedTimeNode.int_value();
 
+            const lt::bdecode_node sequentialNode = root.dict_find("qBt-sequential");
+            if (sequentialNode.type() == lt::bdecode_node::int_t) {
+                if (static_cast<bool>(sequentialNode.int_value()))
+                    p.flags |= lt::torrent_flags::sequential_download;
+                else
+                    p.flags &= ~lt::torrent_flags::sequential_download;
+            }
+
             if (torrentParams.name.isEmpty() && !p.name.empty())
                 torrentParams.name = QString::fromStdString(p.name);
-
         }
         // === END DEPRECATED CODE === //
         else {
@@ -4493,22 +4518,22 @@ void Session::handlePeerBlockedAlert(const lt::peer_blocked_alert *p)
     QString reason;
     switch (p->reason) {
     case lt::peer_blocked_alert::ip_filter:
-        reason = tr("due to IP filter.", "this peer was blocked due to ip filter.");
+        reason = tr("IP filter", "this peer was blocked. Reason: IP filter.");
         break;
     case lt::peer_blocked_alert::port_filter:
-        reason = tr("due to port filter.", "this peer was blocked due to port filter.");
+        reason = tr("port filter", "this peer was blocked. Reason: port filter.");
         break;
     case lt::peer_blocked_alert::i2p_mixed:
-        reason = tr("due to i2p mixed mode restrictions.", "this peer was blocked due to i2p mixed mode restrictions.");
+        reason = tr("%1 mixed mode restrictions", "this peer was blocked. Reason: I2P mixed mode restrictions.").arg("I2P"); // don't translate I2P
         break;
     case lt::peer_blocked_alert::privileged_ports:
-        reason = tr("because it has a low port.", "this peer was blocked because it has a low port.");
+        reason = tr("use of privileged port", "this peer was blocked. Reason: use of privileged port.");
         break;
     case lt::peer_blocked_alert::utp_disabled:
-        reason = tr("because %1 is disabled.", "this peer was blocked because uTP is disabled.").arg(QString::fromUtf8(C_UTP)); // don't translate μTP
+        reason = tr("%1 is disabled", "this peer was blocked. Reason: uTP is disabled.").arg(QString::fromUtf8(C_UTP)); // don't translate μTP
         break;
     case lt::peer_blocked_alert::tcp_disabled:
-        reason = tr("because %1 is disabled.", "this peer was blocked because TCP is disabled.").arg("TCP"); // don't translate TCP
+        reason = tr("%1 is disabled", "this peer was blocked. Reason: TCP is disabled.").arg("TCP"); // don't translate TCP
         break;
     }
 
@@ -4692,7 +4717,7 @@ void Session::handleStorageMovedFailedAlert(const lt::storage_moved_failed_alert
 
 void Session::handleStateUpdateAlert(const lt::state_update_alert *p)
 {
-    QVector<BitTorrent::TorrentHandle *> updatedTorrents;
+    QVector<TorrentHandle *> updatedTorrents;
     updatedTorrents.reserve(p->status.size());
 
     for (const lt::torrent_status &status : p->status) {
