@@ -276,8 +276,8 @@ namespace BitTorrent
         void setTrackerEnabled(bool enabled);
         bool isAppendExtensionEnabled() const;
         void setAppendExtensionEnabled(bool enabled);
-        uint refreshInterval() const;
-        void setRefreshInterval(uint value);
+        int refreshInterval() const;
+        void setRefreshInterval(int value);
         bool isPreallocationEnabled() const;
         void setPreallocationEnabled(bool enabled);
         QString torrentExportDirectory() const;
@@ -302,8 +302,8 @@ namespace BitTorrent
         bool isBandwidthSchedulerEnabled() const;
         void setBandwidthSchedulerEnabled(bool enabled);
 
-        uint saveResumeDataInterval() const;
-        void setSaveResumeDataInterval(uint value);
+        int saveResumeDataInterval() const;
+        void setSaveResumeDataInterval(int value);
         int port() const;
         void setPort(int port);
         bool useRandomPort() const;
@@ -342,6 +342,8 @@ namespace BitTorrent
         void setPeerTurnoverInterval(int num);
         int asyncIOThreads() const;
         void setAsyncIOThreads(int num);
+        int hashingThreads() const;
+        void setHashingThreads(int num);
         int filePoolSize() const;
         void setFilePoolSize(int size);
         int checkingMemUsage() const;
@@ -570,7 +572,7 @@ namespace BitTorrent
         void loadLTSettings(lt::settings_pack &settingsPack);
         void configureNetworkInterfaces(lt::settings_pack &settingsPack);
         void configurePeerClasses();
-        void adjustLimits(lt::settings_pack &settingsPack);
+        void adjustLimits(lt::settings_pack &settingsPack) const;
         void applyBandwidthLimits(lt::settings_pack &settingsPack) const;
         void initMetrics();
         void adjustLimits();
@@ -651,6 +653,7 @@ namespace BitTorrent
         CachedSettingValue<bool> m_announceToAllTrackers;
         CachedSettingValue<bool> m_announceToAllTiers;
         CachedSettingValue<int> m_asyncIOThreads;
+        CachedSettingValue<int> m_hashingThreads;
         CachedSettingValue<int> m_filePoolSize;
         CachedSettingValue<int> m_checkingMemUsage;
         CachedSettingValue<int> m_diskCacheSize;
@@ -697,7 +700,7 @@ namespace BitTorrent
         CachedSettingValue<bool> m_isAddTorrentPaused;
         CachedSettingValue<bool> m_isKeepTorrentTopLevelFolder;
         CachedSettingValue<bool> m_isAppendExtensionEnabled;
-        CachedSettingValue<uint> m_refreshInterval;
+        CachedSettingValue<int> m_refreshInterval;
         CachedSettingValue<bool> m_isPreallocationEnabled;
         CachedSettingValue<QString> m_torrentExportDirectory;
         CachedSettingValue<QString> m_finishedTorrentExportDirectory;
@@ -707,7 +710,7 @@ namespace BitTorrent
         CachedSettingValue<int> m_altGlobalUploadSpeedLimit;
         CachedSettingValue<bool> m_isAltGlobalSpeedLimitEnabled;
         CachedSettingValue<bool> m_isBandwidthSchedulerEnabled;
-        CachedSettingValue<uint> m_saveResumeDataInterval;
+        CachedSettingValue<int> m_saveResumeDataInterval;
         CachedSettingValue<int> m_port;
         CachedSettingValue<bool> m_useRandomPort;
         CachedSettingValue<QString> m_networkInterface;
