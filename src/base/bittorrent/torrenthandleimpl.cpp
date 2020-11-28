@@ -775,6 +775,8 @@ void TorrentHandleImpl::updateState()
             m_state = TorrentState::Uploading;
         else
             m_state = TorrentState::StalledUploading;
+        if (realRatio() > 1.0)
+            m_state = TorrentState::UploadingGoodRatio;
     }
     else
     {
@@ -790,8 +792,6 @@ void TorrentHandleImpl::updateState()
             m_state = TorrentState::Downloading;
         else
             m_state = TorrentState::StalledDownloading;
-        if (realRatio() > 1.0)
-            m_state = TorrentState::UploadingGoodRatio;
     }
 }
 
