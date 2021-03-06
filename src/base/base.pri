@@ -1,12 +1,14 @@
 HEADERS += \
     $$PWD/algorithm.h \
     $$PWD/asyncfilestorage.h \
+    $$PWD/bittorrent/abstractfilestorage.h \
     $$PWD/bittorrent/addtorrentparams.h \
     $$PWD/bittorrent/bandwidthscheduler.h \
     $$PWD/bittorrent/cachestatus.h \
     $$PWD/bittorrent/common.h \
     $$PWD/bittorrent/customstorage.h \
     $$PWD/bittorrent/downloadpriority.h \
+    $$PWD/bittorrent/filesearcher.h \
     $$PWD/bittorrent/filterparserthread.h \
     $$PWD/bittorrent/infohash.h \
     $$PWD/bittorrent/ltqhash.h \
@@ -22,9 +24,10 @@ HEADERS += \
     $$PWD/bittorrent/sessionstatus.h \
     $$PWD/bittorrent/speedmonitor.h \
     $$PWD/bittorrent/statistics.h \
+    $$PWD/bittorrent/torrent.h \
+    $$PWD/bittorrent/torrentcontentlayout.h \
     $$PWD/bittorrent/torrentcreatorthread.h \
-    $$PWD/bittorrent/torrenthandle.h \
-    $$PWD/bittorrent/torrenthandleimpl.h \
+    $$PWD/bittorrent/torrentimpl.h \
     $$PWD/bittorrent/torrentinfo.h \
     $$PWD/bittorrent/tracker.h \
     $$PWD/bittorrent/trackerentry.h \
@@ -70,7 +73,6 @@ HEADERS += \
     $$PWD/settingvalue.h \
     $$PWD/torrentfileguard.h \
     $$PWD/torrentfilter.h \
-    $$PWD/tristatebool.h \
     $$PWD/types.h \
     $$PWD/unicodestrings.h \
     $$PWD/utils/bytearray.h \
@@ -83,13 +85,16 @@ HEADERS += \
     $$PWD/utils/password.h \
     $$PWD/utils/random.h \
     $$PWD/utils/string.h \
-    $$PWD/utils/version.h
+    $$PWD/utils/version.h \
+    $$PWD/version.h
 
 SOURCES += \
     $$PWD/asyncfilestorage.cpp \
+    $$PWD/bittorrent/abstractfilestorage.cpp \
     $$PWD/bittorrent/bandwidthscheduler.cpp \
     $$PWD/bittorrent/customstorage.cpp \
     $$PWD/bittorrent/downloadpriority.cpp \
+    $$PWD/bittorrent/filesearcher.cpp \
     $$PWD/bittorrent/filterparserthread.cpp \
     $$PWD/bittorrent/infohash.cpp \
     $$PWD/bittorrent/magneturi.cpp \
@@ -102,9 +107,9 @@ SOURCES += \
     $$PWD/bittorrent/session.cpp \
     $$PWD/bittorrent/speedmonitor.cpp \
     $$PWD/bittorrent/statistics.cpp \
+    $$PWD/bittorrent/torrent.cpp \
     $$PWD/bittorrent/torrentcreatorthread.cpp \
-    $$PWD/bittorrent/torrenthandle.cpp \
-    $$PWD/bittorrent/torrenthandleimpl.cpp \
+    $$PWD/bittorrent/torrentimpl.cpp \
     $$PWD/bittorrent/torrentinfo.cpp \
     $$PWD/bittorrent/tracker.cpp \
     $$PWD/bittorrent/trackerentry.cpp \
@@ -145,7 +150,6 @@ SOURCES += \
     $$PWD/settingsstorage.cpp \
     $$PWD/torrentfileguard.cpp \
     $$PWD/torrentfilter.cpp \
-    $$PWD/tristatebool.cpp \
     $$PWD/utils/bytearray.cpp \
     $$PWD/utils/foreignapps.cpp \
     $$PWD/utils/fs.cpp \

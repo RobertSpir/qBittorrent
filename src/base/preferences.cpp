@@ -41,6 +41,7 @@
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QDir>
+#include <QList>
 #include <QLocale>
 #include <QNetworkCookie>
 #include <QSettings>
@@ -232,6 +233,16 @@ bool Preferences::closeToTrayNotified() const
 void Preferences::setCloseToTrayNotified(const bool b)
 {
     setValue("Preferences/General/CloseToTrayNotified", b);
+}
+
+bool Preferences::iconsInMenusEnabled() const
+{
+    return value("Preferences/Advanced/EnableIconsInMenus", true).toBool();
+}
+
+void Preferences::setIconsInMenusEnabled(const bool enable)
+{
+    setValue("Preferences/Advanced/EnableIconsInMenus", enable);
 }
 #endif // Q_OS_MACOS
 
@@ -1248,26 +1259,6 @@ QString Preferences::getMainLastDir() const
 void Preferences::setMainLastDir(const QString &path)
 {
     setValue("MainWindowLastDir", path);
-}
-
-QSize Preferences::getPrefSize() const
-{
-    return value("Preferences/State/size").toSize();
-}
-
-void Preferences::setPrefSize(const QSize &size)
-{
-    setValue("Preferences/State/size", size);
-}
-
-QStringList Preferences::getPrefHSplitterSizes() const
-{
-    return value("Preferences/State/hSplitterSizes").toStringList();
-}
-
-void Preferences::setPrefHSplitterSizes(const QStringList &sizes)
-{
-    setValue("Preferences/State/hSplitterSizes", sizes);
 }
 
 QByteArray Preferences::getPeerListState() const

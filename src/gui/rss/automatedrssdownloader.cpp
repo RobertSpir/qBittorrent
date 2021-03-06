@@ -50,6 +50,7 @@
 #include "base/utils/fs.h"
 #include "base/utils/string.h"
 #include "gui/autoexpandabledialog.h"
+#include "gui/torrentcategorydialog.h"
 #include "gui/uithememanager.h"
 #include "gui/utils.h"
 #include "ui_automatedrssdownloader.h"
@@ -68,6 +69,7 @@ AutomatedRssDownloader::AutomatedRssDownloader(QWidget *parent)
     // Icons
     m_ui->removeRuleBtn->setIcon(UIThemeManager::instance()->getIcon("list-remove"));
     m_ui->addRuleBtn->setIcon(UIThemeManager::instance()->getIcon("list-add"));
+    m_ui->addCategoryBtn->setIcon(UIThemeManager::instance()->getIcon("list-add"));
 
     // Ui Settings
     m_ui->listRules->setSortingEnabled(true);
@@ -269,17 +271,13 @@ void AutomatedRssDownloader::updateRuleDefinitionBox()
         if (m_currentRule.assignedCategory().isEmpty())
             m_ui->comboCategory->clearEditText();
         int index = 0;
-        if (m_currentRule.addPaused() == TriStateBool::True)
-            index = 1;
-        else if (m_currentRule.addPaused() == TriStateBool::False)
-            index = 2;
+        if (m_currentRule.addPaused().has_value())
+            index = (*m_currentRule.addPaused() ? 1 : 2);
         m_ui->comboAddPaused->setCurrentIndex(index);
         index = 0;
-        if (m_currentRule.createSubfolder() == TriStateBool::True)
-            index = 1;
-        else if (m_currentRule.createSubfolder() == TriStateBool::False)
-            index = 2;
-        m_ui->comboCreateSubfolder->setCurrentIndex(index);
+        if (m_currentRule.torrentContentLayout())
+            index = static_cast<int>(*m_currentRule.torrentContentLayout()) + 1;
+        m_ui->comboContentLayout->setCurrentIndex(index);
         m_ui->spinIgnorePeriod->setValue(m_currentRule.ignoreDays());
         QDateTime dateTime = m_currentRule.lastMatch();
         QString lMatch;
@@ -320,8 +318,8 @@ void AutomatedRssDownloader::clearRuleDefinitionBox()
     m_ui->spinIgnorePeriod->setValue(0);
     m_ui->comboAddPaused->clearEditText();
     m_ui->comboAddPaused->setCurrentIndex(-1);
-    m_ui->comboCreateSubfolder->clearEditText();
-    m_ui->comboCreateSubfolder->setCurrentIndex(-1);
+    m_ui->comboContentLayout->clearEditText();
+    m_ui->comboContentLayout->setCurrentIndex(-1);
     updateFieldsToolTips(m_ui->checkRegex->isChecked());
     updateMustLineValidity();
     updateMustNotLineValidity();
@@ -349,18 +347,18 @@ void AutomatedRssDownloader::updateEditedRule()
     m_currentRule.setEpisodeFilter(m_ui->lineEFilter->text());
     m_currentRule.setSavePath(m_ui->checkBoxSaveDiffDir->isChecked() ? m_ui->lineSavePath->selectedPath() : "");
     m_currentRule.setCategory(m_ui->comboCategory->currentText());
-    TriStateBool addPaused; // Undefined by default
+    std::optional<bool> addPaused;
     if (m_ui->comboAddPaused->currentIndex() == 1)
-        addPaused = TriStateBool::True;
+        addPaused = true;
     else if (m_ui->comboAddPaused->currentIndex() == 2)
-        addPaused = TriStateBool::False;
+        addPaused = false;
     m_currentRule.setAddPaused(addPaused);
-    TriStateBool createSubfolder; // Undefined by default
-    if (m_ui->comboCreateSubfolder->currentIndex() == 1)
-        createSubfolder = TriStateBool::True;
-    else if (m_ui->comboCreateSubfolder->currentIndex() == 2)
-        createSubfolder = TriStateBool::False;
-    m_currentRule.setCreateSubfolder(createSubfolder);
+
+    std::optional<BitTorrent::TorrentContentLayout> contentLayout;
+    if (m_ui->comboContentLayout->currentIndex() > 0)
+        contentLayout = static_cast<BitTorrent::TorrentContentLayout>(m_ui->comboContentLayout->currentIndex() - 1);
+    m_currentRule.setTorrentContentLayout(contentLayout);
+
     m_currentRule.setIgnoreDays(m_ui->spinIgnorePeriod->value());
 }
 
@@ -407,6 +405,17 @@ void AutomatedRssDownloader::on_removeRuleBtn_clicked()
 
     for (const QListWidgetItem *item : selection)
         RSS::AutoDownloader::instance()->removeRule(item->text());
+}
+
+void AutomatedRssDownloader::on_addCategoryBtn_clicked()
+{
+    const QString newCategoryName = TorrentCategoryDialog::createCategory(this);
+
+    if (!newCategoryName.isEmpty())
+    {
+        m_ui->comboCategory->addItem(newCategoryName);
+        m_ui->comboCategory->setCurrentText(newCategoryName);
+    }
 }
 
 void AutomatedRssDownloader::on_exportBtn_clicked()
@@ -494,8 +503,8 @@ void AutomatedRssDownloader::displayRulesListMenu()
     QMenu *menu = new QMenu(this);
     menu->setAttribute(Qt::WA_DeleteOnClose);
 
-    const QAction *addAct = menu->addAction(UIThemeManager::instance()->getIcon("list-add"), tr("Add new rule..."));
-    connect(addAct, &QAction::triggered, this, &AutomatedRssDownloader::on_addRuleBtn_clicked);
+    menu->addAction(UIThemeManager::instance()->getIcon("list-add"), tr("Add new rule...")
+        , this, &AutomatedRssDownloader::on_addRuleBtn_clicked);
 
     const QList<QListWidgetItem *> selection = m_ui->listRules->selectedItems();
 
@@ -503,24 +512,21 @@ void AutomatedRssDownloader::displayRulesListMenu()
     {
         if (selection.count() == 1)
         {
-            const QAction *delAct = menu->addAction(UIThemeManager::instance()->getIcon("list-remove"), tr("Delete rule"));
-            connect(delAct, &QAction::triggered, this, &AutomatedRssDownloader::on_removeRuleBtn_clicked);
-
+            menu->addAction(UIThemeManager::instance()->getIcon("list-remove"), tr("Delete rule")
+                , this, &AutomatedRssDownloader::on_removeRuleBtn_clicked);
             menu->addSeparator();
-
-            const QAction *renameAct = menu->addAction(UIThemeManager::instance()->getIcon("edit-rename"), tr("Rename rule..."));
-            connect(renameAct, &QAction::triggered, this, &AutomatedRssDownloader::renameSelectedRule);
+            menu->addAction(UIThemeManager::instance()->getIcon("edit-rename"), tr("Rename rule...")
+                , this, &AutomatedRssDownloader::renameSelectedRule);
         }
         else
         {
-            const QAction *delAct = menu->addAction(UIThemeManager::instance()->getIcon("list-remove"), tr("Delete selected rules"));
-            connect(delAct, &QAction::triggered, this, &AutomatedRssDownloader::on_removeRuleBtn_clicked);
+            menu->addAction(UIThemeManager::instance()->getIcon("list-remove"), tr("Delete selected rules")
+                , this, &AutomatedRssDownloader::on_removeRuleBtn_clicked);
         }
 
         menu->addSeparator();
-
-        const QAction *clearAct = menu->addAction(UIThemeManager::instance()->getIcon("edit-clear"), tr("Clear downloaded episodes..."));
-        connect(clearAct, &QAction::triggered, this, &AutomatedRssDownloader::clearSelectedRuleDownloadedEpisodeList);
+        menu->addAction(UIThemeManager::instance()->getIcon("edit-clear"), tr("Clear downloaded episodes...")
+            , this, &AutomatedRssDownloader::clearSelectedRuleDownloadedEpisodeList);
     }
 
     menu->popup(QCursor::pos());

@@ -16,18 +16,30 @@
     </message>
     <message>
         <source>Start torrent</source>
-        <translation>Aloita torrent</translation>
+        <translation>Käynnistä torrentti</translation>
     </message>
     <message>
         <source>Skip hash check</source>
-        <translation>Ohita tarkistussumman laskeminen</translation>
+        <translation>Ohita tarkistussumman lasku</translation>
     </message>
     <message>
         <source>Torrent Management Mode:</source>
         <translation>Torrentien hallintatila:</translation>
     </message>
     <message>
-        <source>Keep top-level folder</source>
+        <source>Content layout:</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Original</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Create subfolder</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Don't create subfolder</source>
         <translation type="unfinished" />
     </message>
 </context>
@@ -39,7 +51,7 @@
     </message>
     <message>
         <source>Uncategorized</source>
-        <translation>Luokittelemattomia</translation>
+        <translation>Luokittelemattomat</translation>
     </message>
 </context>
 <context>
@@ -85,7 +97,7 @@
     </message>
     <message>
         <source>Only one link per line</source>
-        <translation>Vain yksi linkki riville</translation>
+        <translation>Vain yksi linkki riviä kohden</translation>
     </message>
     <message>
         <source>Global upload rate limit must be greater than 0 or disabled.</source>
@@ -145,7 +157,7 @@
     </message>
     <message>
         <source>Seeding time limit must be between 0 and 525600 minutes.</source>
-        <translation type="unfinished" />
+        <translation>Jakoajan aikarajan pitää olla 0 ja 525600 minuutin väliltä.</translation>
     </message>
     <message>
         <source>The port used for incoming connections must be between 1 and 65535.</source>
@@ -214,7 +226,7 @@
     </message>
     <message>
         <source>Set location</source>
-        <translation>Aseta sijainti</translation>
+        <translation>Määritä sijainti</translation>
     </message>
     <message>
         <source>Limit upload rate</source>
@@ -278,7 +290,7 @@
     </message>
     <message>
         <source>Upload local torrent</source>
-        <translation>Lähetä paikallinen torrent</translation>
+        <translation>Lähetä paikallinen torrentti</translation>
     </message>
     <message>
         <source>Are you sure you want to delete the selected torrents from the transfer list?</source>
@@ -362,7 +374,7 @@
     </message>
     <message>
         <source>OK</source>
-        <translation type="unfinished" />
+        <translation>OK</translation>
     </message>
 </context>
 <context>
@@ -702,10 +714,6 @@
     <message>
         <source>Password:</source>
         <translation>Salasana:</translation>
-    </message>
-    <message>
-        <source>Enabled protocol:</source>
-        <translation type="vanished">Käytössä oleva protokolla:</translation>
     </message>
     <message>
         <source>TCP and μTP</source>
@@ -1386,10 +1394,6 @@
         <translation type="unfinished" />
     </message>
     <message>
-        <source>Keep top-level folder</source>
-        <translation type="unfinished" />
-    </message>
-    <message>
         <source> min</source>
         <translation type="unfinished" />
     </message>
@@ -1427,6 +1431,26 @@
     </message>
     <message>
         <source>Peer connection protocol:</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Support internationalized domain name (IDN) (requires libtorrent &gt;= 1.2.12):</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Torrent content layout:</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Create subfolder</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Original</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Don't create subfolder</source>
         <translation type="unfinished" />
     </message>
 </context>
@@ -3205,10 +3229,6 @@
         <translation type="unfinished" />
     </message>
     <message>
-        <source>Create Subfolder:</source>
-        <translation type="unfinished" />
-    </message>
-    <message>
         <source>Episode number is a mandatory positive value</source>
         <translation type="unfinished" />
     </message>
@@ -3295,6 +3315,22 @@
     <message>
         <source>Smart Episode Filter will check the episode number to prevent downloading of duplicates.
 Supports the formats: S01E01, 1x1, 2017.12.31 and 31.12.2017 (Date formats also support - as a separator)</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Torrent content layout:</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Create subfolder</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Original</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Don't create subfolder</source>
         <translation type="unfinished" />
     </message>
 </context>

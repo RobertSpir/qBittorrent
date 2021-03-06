@@ -20,15 +20,27 @@
     </message>
     <message>
         <source>Skip hash check</source>
-        <translation>Izlaist hash puorbaudi</translation>
+        <translation>Izlaist maiseituojkoda puorbaudi</translation>
     </message>
     <message>
         <source>Torrent Management Mode:</source>
         <translation>Torrenta puorvaļdis režims:</translation>
     </message>
     <message>
-        <source>Keep top-level folder</source>
+        <source>Content layout:</source>
         <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Original</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Create subfolder</source>
+        <translation>Radeit zamapvuoci</translation>
+    </message>
+    <message>
+        <source>Don't create subfolder</source>
+        <translation>Naradeit zamapvuoci</translation>
     </message>
 </context>
 <context>
@@ -1382,10 +1394,6 @@
         <translation type="unfinished" />
     </message>
     <message>
-        <source>Keep top-level folder</source>
-        <translation type="unfinished" />
-    </message>
-    <message>
         <source> min</source>
         <translation>myn</translation>
     </message>
@@ -1423,6 +1431,26 @@
     </message>
     <message>
         <source>Peer connection protocol:</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Support internationalized domain name (IDN) (requires libtorrent &gt;= 1.2.12):</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Torrent content layout:</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Create subfolder</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Original</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Don't create subfolder</source>
         <translation type="unfinished" />
     </message>
 </context>
@@ -1591,7 +1619,7 @@
     </message>
     <message>
         <source>Peers:</source>
-        <translation>Kūplītuotuoji:</translation>
+        <translation>Jāmuoji:</translation>
     </message>
     <message>
         <source>Download Limit:</source>
@@ -1655,7 +1683,7 @@
     </message>
     <message>
         <source>Torrent Hash:</source>
-        <translation>Torrenta hash:</translation>
+        <translation>Torrenta maiseituojkods:</translation>
     </message>
     <message>
         <source>Save Path:</source>
@@ -1943,7 +1971,7 @@
     <message>
         <source>Peers</source>
         <comment>i.e. partial sources (often untranslated)</comment>
-        <translation>Kūplītuotuoji</translation>
+        <translation>Jāmuoji</translation>
     </message>
     <message>
         <source>Down Speed</source>
@@ -2326,12 +2354,12 @@
     <message>
         <source>Move to top</source>
         <comment>i.e. Move to top of the queue</comment>
-        <translation>Nūlikt viersā</translation>
+        <translation>Puorceļt saroksta viersā</translation>
     </message>
     <message>
         <source>Move to bottom</source>
         <comment>i.e. Move to bottom of the queue</comment>
-        <translation>Nūlikt zamoškā</translation>
+        <translation>Puorceļt saroksta zamoškā</translation>
     </message>
     <message>
         <source>Set location...</source>
@@ -3201,16 +3229,6 @@
         <translation>Vysod</translation>
     </message>
     <message>
-        <source>Smart Episode Filter will check the episode number to prevent downloading of duplicates.
-Supports the formats: S01E01, 1x1, 2017.01.01 and 01.01.2017 (Date formats also support - as a separator)</source>
-        <translation type="vanished">Gudrais epizozu filtrys izraudzeis epizozu numerus, lai nūgrīztu divkuorteigu atsasyuteišonu.
-Formats: S01E01, 1x1, 2017.01.01 i 01.01.2017 (Datam škiramsimbola "." vītā var lītuot arī "-")</translation>
-    </message>
-    <message>
-        <source>Create Subfolder:</source>
-        <translation>Radeit zamapvuoci:</translation>
-    </message>
-    <message>
         <source>Episode number is a mandatory positive value</source>
         <translation>Epizodys numurs navar byut negativs</translation>
     </message>
@@ -3297,7 +3315,24 @@ Formats: S01E01, 1x1, 2017.01.01 i 01.01.2017 (Datam škiramsimbola "." vītā v
     <message>
         <source>Smart Episode Filter will check the episode number to prevent downloading of duplicates.
 Supports the formats: S01E01, 1x1, 2017.12.31 and 31.12.2017 (Date formats also support - as a separator)</source>
+        <translation>Gudrais epizozu filtrys izraudzeis epizozu numerus, lai nūgrīztu divkuorteigu atsasyuteišonu.
+Formats: S01E01, 1x1, 2017.12.31 i 31.12.2017 (Datam škiramsimbola "." vītā var lītuot arī "-")</translation>
+    </message>
+    <message>
+        <source>Torrent content layout:</source>
         <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Create subfolder</source>
+        <translation>Radeit zamapvuoci</translation>
+    </message>
+    <message>
+        <source>Original</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Don't create subfolder</source>
+        <translation>Naradeit zamapvuoci</translation>
     </message>
 </context>
 <context>

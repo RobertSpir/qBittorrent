@@ -47,7 +47,7 @@
 #include "base/bittorrent/peeraddress.h"
 #include "base/bittorrent/peerinfo.h"
 #include "base/bittorrent/session.h"
-#include "base/bittorrent/torrenthandle.h"
+#include "base/bittorrent/torrent.h"
 #include "base/global.h"
 #include "base/logger.h"
 #include "base/net/geoipmanager.h"
@@ -260,7 +260,7 @@ void PeerListWidget::updatePeerCountryResolutionState()
 
 void PeerListWidget::showPeerListMenu(const QPoint &)
 {
-    BitTorrent::TorrentHandle *const torrent = m_properties->getCurrentTorrent();
+    BitTorrent::Torrent *const torrent = m_properties->getCurrentTorrent();
     if (!torrent) return;
 
     QMenu *menu = new QMenu(this);
@@ -270,8 +270,8 @@ void PeerListWidget::showPeerListMenu(const QPoint &)
     // Do not allow user to add peers in a private torrent
     if (!torrent->isQueued() && !torrent->isChecking() && !torrent->isPrivate())
     {
-        const QAction *addPeerAct = menu->addAction(UIThemeManager::instance()->getIcon("user-group-new"), tr("Add a new peer..."));
-        connect(addPeerAct, &QAction::triggered, this, [this, torrent]()
+        menu->addAction(UIThemeManager::instance()->getIcon("user-group-new"), tr("Add a new peer...")
+            , this, [this, torrent]()
         {
             const QVector<BitTorrent::PeerAddress> peersList = PeersAdditionDialog::askForPeers(this);
             const int peerCount = std::count_if(peersList.cbegin(), peersList.cend(), [torrent](const BitTorrent::PeerAddress &peer)
@@ -287,13 +287,11 @@ void PeerListWidget::showPeerListMenu(const QPoint &)
 
     if (!selectionModel()->selectedRows().isEmpty())
     {
-        const QAction *copyPeerAct = menu->addAction(UIThemeManager::instance()->getIcon("edit-copy"), tr("Copy IP:port"));
-        connect(copyPeerAct, &QAction::triggered, this, &PeerListWidget::copySelectedPeers);
-
+        menu->addAction(UIThemeManager::instance()->getIcon("edit-copy"), tr("Copy IP:port")
+            , this, &PeerListWidget::copySelectedPeers);
         menu->addSeparator();
-
-        const QAction *banAct = menu->addAction(UIThemeManager::instance()->getIcon("user-group-delete"), tr("Ban peer permanently"));
-        connect(banAct, &QAction::triggered, this, &PeerListWidget::banSelectedPeers);
+        menu->addAction(UIThemeManager::instance()->getIcon("user-group-delete"), tr("Ban peer permanently")
+            , this, &PeerListWidget::banSelectedPeers);
     }
 
     if (menu->isEmpty())
@@ -370,7 +368,7 @@ void PeerListWidget::saveSettings() const
     Preferences::instance()->setPeerListState(header()->saveState());
 }
 
-void PeerListWidget::loadPeers(const BitTorrent::TorrentHandle *torrent)
+void PeerListWidget::loadPeers(const BitTorrent::Torrent *torrent)
 {
     if (!torrent) return;
 
@@ -406,7 +404,7 @@ void PeerListWidget::loadPeers(const BitTorrent::TorrentHandle *torrent)
     }
 }
 
-void PeerListWidget::updatePeer(const BitTorrent::TorrentHandle *torrent, const BitTorrent::PeerInfo &peer, bool &isNewPeer)
+void PeerListWidget::updatePeer(const BitTorrent::Torrent *torrent, const BitTorrent::PeerInfo &peer, bool &isNewPeer)
 {
     const PeerEndpoint peerEndpoint {peer.address(), peer.connectionType()};
     const QString peerIp = peerEndpoint.address.ip.toString();

@@ -42,10 +42,11 @@
 #include <QTableView>
 #include <QTreeWidgetItem>
 #include <QUrl>
+#include <QVector>
 
 #include "base/bittorrent/peerinfo.h"
 #include "base/bittorrent/session.h"
-#include "base/bittorrent/torrenthandle.h"
+#include "base/bittorrent/torrent.h"
 #include "base/bittorrent/trackerentry.h"
 #include "base/global.h"
 #include "base/preferences.h"
@@ -171,7 +172,7 @@ void TrackerListWidget::setRowColor(const int row, const QColor &color)
 
 void TrackerListWidget::moveSelectionUp()
 {
-    BitTorrent::TorrentHandle *const torrent = m_properties->getCurrentTorrent();
+    BitTorrent::Torrent *const torrent = m_properties->getCurrentTorrent();
     if (!torrent)
     {
         clear();
@@ -217,7 +218,7 @@ void TrackerListWidget::moveSelectionUp()
 
 void TrackerListWidget::moveSelectionDown()
 {
-    BitTorrent::TorrentHandle *const torrent = m_properties->getCurrentTorrent();
+    BitTorrent::Torrent *const torrent = m_properties->getCurrentTorrent();
     if (!torrent)
     {
         clear();
@@ -280,28 +281,36 @@ void TrackerListWidget::clear()
     m_LSDItem->setText(COL_MSG, "");
 }
 
-void TrackerListWidget::loadStickyItems(const BitTorrent::TorrentHandle *torrent)
+void TrackerListWidget::loadStickyItems(const BitTorrent::Torrent *torrent)
 {
-    QString working = tr("Working");
-    QString disabled = tr("Disabled");
+    const QString working {tr("Working")};
+    const QString disabled {tr("Disabled")};
+    const QString torrentDisabled {tr("Disabled for this torrent")};
+    const auto *session = BitTorrent::Session::instance();
 
     // load DHT information
-    if (BitTorrent::Session::instance()->isDHTEnabled() && !torrent->isPrivate())
-        m_DHTItem->setText(COL_STATUS, working);
-    else
+    if (torrent->isPrivate() || torrent->isDHTDisabled())
+        m_DHTItem->setText(COL_STATUS, torrentDisabled);
+    else if (!session->isDHTEnabled())
         m_DHTItem->setText(COL_STATUS, disabled);
+    else
+        m_DHTItem->setText(COL_STATUS, working);
 
     // Load PeX Information
-    if (BitTorrent::Session::instance()->isPeXEnabled() && !torrent->isPrivate())
-        m_PEXItem->setText(COL_STATUS, working);
-    else
+    if (torrent->isPrivate() || torrent->isPEXDisabled())
+        m_PEXItem->setText(COL_STATUS, torrentDisabled);
+    else if (!session->isPeXEnabled())
         m_PEXItem->setText(COL_STATUS, disabled);
+    else
+        m_PEXItem->setText(COL_STATUS, working);
 
     // Load LSD Information
-    if (BitTorrent::Session::instance()->isLSDEnabled() && !torrent->isPrivate())
-        m_LSDItem->setText(COL_STATUS, working);
-    else
+    if (torrent->isPrivate() || torrent->isLSDDisabled())
+        m_LSDItem->setText(COL_STATUS, torrentDisabled);
+    else if (!session->isLSDEnabled())
         m_LSDItem->setText(COL_STATUS, disabled);
+    else
+        m_LSDItem->setText(COL_STATUS, working);
 
     if (torrent->isPrivate())
     {
@@ -352,7 +361,7 @@ void TrackerListWidget::loadStickyItems(const BitTorrent::TorrentHandle *torrent
 void TrackerListWidget::loadTrackers()
 {
     // Load trackers from torrent handle
-    const BitTorrent::TorrentHandle *torrent = m_properties->getCurrentTorrent();
+    const BitTorrent::Torrent *torrent = m_properties->getCurrentTorrent();
     if (!torrent) return;
 
     loadStickyItems(torrent);
@@ -429,7 +438,7 @@ void TrackerListWidget::loadTrackers()
 // Ask the user for new trackers and add them to the torrent
 void TrackerListWidget::askForTrackers()
 {
-    BitTorrent::TorrentHandle *const torrent = m_properties->getCurrentTorrent();
+    BitTorrent::Torrent *const torrent = m_properties->getCurrentTorrent();
     if (!torrent) return;
 
     QVector<BitTorrent::TrackerEntry> trackers;
@@ -457,7 +466,7 @@ void TrackerListWidget::copyTrackerUrl()
 
 void TrackerListWidget::deleteSelectedTrackers()
 {
-    BitTorrent::TorrentHandle *const torrent = m_properties->getCurrentTorrent();
+    BitTorrent::Torrent *const torrent = m_properties->getCurrentTorrent();
     if (!torrent)
     {
         clear();
@@ -495,7 +504,7 @@ void TrackerListWidget::deleteSelectedTrackers()
 
 void TrackerListWidget::editSelectedTracker()
 {
-    BitTorrent::TorrentHandle *const torrent = m_properties->getCurrentTorrent();
+    BitTorrent::Torrent *const torrent = m_properties->getCurrentTorrent();
     if (!torrent) return;
 
     const QVector<QTreeWidgetItem *> selectedTrackerItems = getSelectedTrackerItems();
@@ -546,7 +555,7 @@ void TrackerListWidget::reannounceSelected()
     const QList<QTreeWidgetItem *> selItems = selectedItems();
     if (selItems.isEmpty()) return;
 
-    BitTorrent::TorrentHandle *const torrent = m_properties->getCurrentTorrent();
+    BitTorrent::Torrent *const torrent = m_properties->getCurrentTorrent();
     if (!torrent) return;
 
     const QVector<BitTorrent::TrackerEntry> trackers = torrent->trackers();
@@ -576,39 +585,35 @@ void TrackerListWidget::reannounceSelected()
 
 void TrackerListWidget::showTrackerListMenu(const QPoint &)
 {
-    BitTorrent::TorrentHandle *const torrent = m_properties->getCurrentTorrent();
+    BitTorrent::Torrent *const torrent = m_properties->getCurrentTorrent();
     if (!torrent) return;
 
     QMenu *menu = new QMenu(this);
     menu->setAttribute(Qt::WA_DeleteOnClose);
 
     // Add actions
-    const QAction *addAct = menu->addAction(UIThemeManager::instance()->getIcon("list-add"), tr("Add a new tracker..."));
-    connect(addAct, &QAction::triggered, this, &TrackerListWidget::askForTrackers);
+    menu->addAction(UIThemeManager::instance()->getIcon("list-add"), tr("Add a new tracker...")
+        , this, &TrackerListWidget::askForTrackers);
 
     if (!getSelectedTrackerItems().isEmpty())
     {
-        const QAction *editAct = menu->addAction(UIThemeManager::instance()->getIcon("edit-rename"),tr("Edit tracker URL..."));
-        connect(editAct, &QAction::triggered, this, &TrackerListWidget::editSelectedTracker);
-
-        const QAction *delAct = menu->addAction(UIThemeManager::instance()->getIcon("list-remove"), tr("Remove tracker"));
-        connect(delAct, &QAction::triggered, this, &TrackerListWidget::deleteSelectedTrackers);
-
-        const QAction *copyAct = menu->addAction(UIThemeManager::instance()->getIcon("edit-copy"), tr("Copy tracker URL"));
-        connect(copyAct, &QAction::triggered, this, &TrackerListWidget::copyTrackerUrl);
+        menu->addAction(UIThemeManager::instance()->getIcon("edit-rename"),tr("Edit tracker URL...")
+            , this, &TrackerListWidget::editSelectedTracker);
+        menu->addAction(UIThemeManager::instance()->getIcon("list-remove"), tr("Remove tracker")
+            , this, &TrackerListWidget::deleteSelectedTrackers);
+        menu->addAction(UIThemeManager::instance()->getIcon("edit-copy"), tr("Copy tracker URL")
+            , this, &TrackerListWidget::copyTrackerUrl);
     }
 
     if (!torrent->isPaused())
     {
-        const QAction *reannounceSelAct = menu->addAction(UIThemeManager::instance()->getIcon("view-refresh"), tr("Force reannounce to selected trackers"));
-        connect(reannounceSelAct, &QAction::triggered, this, &TrackerListWidget::reannounceSelected);
-
+        menu->addAction(UIThemeManager::instance()->getIcon("view-refresh"), tr("Force reannounce to selected trackers")
+            , this, &TrackerListWidget::reannounceSelected);
         menu->addSeparator();
-
-        const QAction *reannounceAllAct = menu->addAction(UIThemeManager::instance()->getIcon("view-refresh"), tr("Force reannounce to all trackers"));
-        connect(reannounceAllAct, &QAction::triggered, this, [this]()
+        menu->addAction(UIThemeManager::instance()->getIcon("view-refresh"), tr("Force reannounce to all trackers")
+            , this, [this]()
         {
-            BitTorrent::TorrentHandle *h = m_properties->getCurrentTorrent();
+            BitTorrent::Torrent *h = m_properties->getCurrentTorrent();
             h->forceReannounce();
             h->forceDHTAnnounce();
         });

@@ -27,8 +27,20 @@
         <translation>Modus für das Torrent-Management:</translation>
     </message>
     <message>
-        <source>Keep top-level folder</source>
-        <translation>Oberstes Verzeichnis behalten</translation>
+        <source>Content layout:</source>
+        <translation>Layout für Inhalt:</translation>
+    </message>
+    <message>
+        <source>Original</source>
+        <translation>Original</translation>
+    </message>
+    <message>
+        <source>Create subfolder</source>
+        <translation>Erstelle Unterordner</translation>
+    </message>
+    <message>
+        <source>Don't create subfolder</source>
+        <translation>Erstelle keine Unterordner</translation>
     </message>
 </context>
 <context>
@@ -282,7 +294,7 @@
     </message>
     <message>
         <source>Are you sure you want to delete the selected torrents from the transfer list?</source>
-        <translation>Sollen die die ausgewählten Torrents wirklich aus der Transfer-Liste gelöscht werden?</translation>
+        <translation>Sollen die gewählten Torrents wirklich aus der Transfer-Liste gelöscht werden?</translation>
     </message>
     <message>
         <source>Save</source>
@@ -702,10 +714,6 @@
     <message>
         <source>Password:</source>
         <translation>Passwort:</translation>
-    </message>
-    <message>
-        <source>Enabled protocol:</source>
-        <translation type="vanished">Aktiviertes Protokoll:</translation>
     </message>
     <message>
         <source>TCP and μTP</source>
@@ -1387,7 +1395,7 @@
     </message>
     <message>
         <source>Keep top-level folder</source>
-        <translation>Oberstes Verzeichnis behalten</translation>
+        <translation type="vanished">Oberstes Verzeichnis behalten</translation>
     </message>
     <message>
         <source> min</source>
@@ -1427,6 +1435,26 @@
     </message>
     <message>
         <source>Peer connection protocol:</source>
+        <translation>Verbindungsprotokoll Peers:</translation>
+    </message>
+    <message>
+        <source>Support internationalized domain name (IDN) (requires libtorrent &gt;= 1.2.12):</source>
+        <translation>Internationalisierten Domain-Namen (IDN) verwenden (erfordert Libtorrent &gt;= 1.2.12):</translation>
+    </message>
+    <message>
+        <source>Torrent content layout:</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Create subfolder</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Original</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Don't create subfolder</source>
         <translation type="unfinished" />
     </message>
 </context>
@@ -1494,7 +1522,7 @@
     </message>
     <message>
         <source>Are you sure you want to permanently ban the selected peers?</source>
-        <translation>Sollen die ausgewählten Peers wirklich dauerhaft gebannt werden?</translation>
+        <translation>Sollen die gewählten Peers wirklich dauerhaft gebannt werden?</translation>
     </message>
     <message>
         <source>Copy IP:port</source>
@@ -2190,10 +2218,6 @@
         <source>%1 ago</source>
         <comment>e.g.: 1h 20m ago</comment>
         <translation>vor %1</translation>
-    </message>
-    <message>
-        <source>Allocating</source>
-        <translation type="vanished">Weise zu</translation>
     </message>
     <message>
         <source>Paused</source>
@@ -3047,7 +3071,7 @@
     </message>
     <message>
         <source>Please type a RSS feed URL</source>
-        <translation>Bitte eine RSS-Stream-Adresse eingeben</translation>
+        <translation>Bitte eine RSS-Feed Adresse eingeben</translation>
     </message>
     <message>
         <source>Fetching of RSS feeds is disabled now! You can enable it in application settings.</source>
@@ -3059,7 +3083,7 @@
     </message>
     <message>
         <source>Are you sure you want to delete the selected RSS feeds?</source>
-        <translation>Sind Sie sicher, dass Sie die ausgewählten RSS-Feeds löschen möchten?</translation>
+        <translation>Sollen die gewählten RSS-Feeds wirklich gelöscht werden?</translation>
     </message>
     <message>
         <source>New subscription...</source>
@@ -3186,7 +3210,7 @@
     </message>
     <message>
         <source>Are you sure you want to remove the selected download rules?</source>
-        <translation>Sollen die ausgewählten Downloadregeln wirklich entfernt werden?</translation>
+        <translation>Sollen die gewählten Downloadregeln wirklich entfernt werden?</translation>
     </message>
     <message>
         <source>Use global settings</source>
@@ -3207,16 +3231,6 @@
     <message>
         <source>Always</source>
         <translation>Immer</translation>
-    </message>
-    <message>
-        <source>Smart Episode Filter will check the episode number to prevent downloading of duplicates.
-Supports the formats: S01E01, 1x1, 2017.01.01 and 01.01.2017 (Date formats also support - as a separator)</source>
-        <translation type="vanished">Der Smart-Folgenfilter überprüft die Folgennummer um das doppelte Herunterladen zu vermeiden.
-Er unterstützt die Formate: S01E01, 1x1, 2017.01.01 und 01.01.2017 (Datums-Formate werden auch unterstützt, allerdings als Trennung)</translation>
-    </message>
-    <message>
-        <source>Create Subfolder:</source>
-        <translation>Erstelle Unterordner:</translation>
     </message>
     <message>
         <source>Episode number is a mandatory positive value</source>
@@ -3305,7 +3319,24 @@ Er unterstützt die Formate: S01E01, 1x1, 2017.01.01 und 01.01.2017 (Datums-Form
     <message>
         <source>Smart Episode Filter will check the episode number to prevent downloading of duplicates.
 Supports the formats: S01E01, 1x1, 2017.12.31 and 31.12.2017 (Date formats also support - as a separator)</source>
-        <translation type="unfinished" />
+        <translation>Der Smart-Folgenfilter überprüft die Folgennummer um das doppelte Herunterladen zu vermeiden.
+Er unterstützt die Formate: S01E01, 1x1, 2017.12.31 und 31.12.2017 (Datums-Formate werden auch unterstützt, allerdings als Trennung)</translation>
+    </message>
+    <message>
+        <source>Torrent content layout:</source>
+        <translation>Layout für Torrent-Inhalt:</translation>
+    </message>
+    <message>
+        <source>Create subfolder</source>
+        <translation>Erstelle Unterordner</translation>
+    </message>
+    <message>
+        <source>Original</source>
+        <translation>Original</translation>
+    </message>
+    <message>
+        <source>Don't create subfolder</source>
+        <translation>Erstelle keine Unterordner</translation>
     </message>
 </context>
 <context>

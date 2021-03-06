@@ -26,12 +26,12 @@
  * exception statement from your version.
  */
 
-#ifndef OPTIONSDIALOG_H
-#define OPTIONSDIALOG_H
+#pragma once
 
 #include <QDialog>
 
-class QAbstractButton;
+#include "base/settingvalue.h"
+
 class QCloseEvent;
 class QListWidgetItem;
 
@@ -59,6 +59,8 @@ namespace Ui
 class OptionsDialog final : public QDialog
 {
     Q_OBJECT
+    Q_DISABLE_COPY(OptionsDialog)
+
     using ThisType = OptionsDialog;
 
     enum Tabs
@@ -92,13 +94,11 @@ private slots:
     void on_buttonBox_accepted();
     void closeEvent(QCloseEvent *e) override;
     void on_buttonBox_rejected();
-    void applySettings(QAbstractButton *button);
+    void applySettings();
     void enableApplyButton();
     void toggleComboRatioLimitAct();
     void changePage(QListWidgetItem *, QListWidgetItem *);
-    void loadWindowState();
     void loadSplitterState();
-    void saveWindowState() const;
     void handleScanFolderViewSelectionChanged();
     void on_IpFilterRefreshBtn_clicked();
     void handleIPFilterParsed(bool error, int ruleCount);
@@ -162,7 +162,6 @@ private:
     // IP Filter
     bool isIPFilteringEnabled() const;
     QString getFilter() const;
-    bool m_refreshingIpFilter;
     // Queueing system
     bool isQueueingSystemEnabled() const;
     int getMaxActiveDownloads() const;
@@ -178,10 +177,15 @@ private:
     bool schedTimesOk();
 
     Ui::OptionsDialog *m_ui;
-    QAbstractButton *m_applyButton;
+    SettingValue<QSize> m_storeDialogSize;
+    SettingValue<QStringList> m_storeHSplitterSize;
+
+    QPushButton *m_applyButton;
+
     AdvancedSettings *m_advancedSettings;
+
     QList<QString> m_addedScanDirs;
     QList<QString> m_removedScanDirs;
-};
 
-#endif // OPTIONSDIALOG_H
+    bool m_refreshingIpFilter = false;
+};

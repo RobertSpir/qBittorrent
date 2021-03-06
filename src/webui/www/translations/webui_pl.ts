@@ -27,8 +27,20 @@
         <translation>Tryb zarządzania torrentem:</translation>
     </message>
     <message>
-        <source>Keep top-level folder</source>
-        <translation>Zachowaj folder najwyższego poziomu</translation>
+        <source>Content layout:</source>
+        <translation>Układ zawartości:</translation>
+    </message>
+    <message>
+        <source>Original</source>
+        <translation>Pierwotny</translation>
+    </message>
+    <message>
+        <source>Create subfolder</source>
+        <translation>Utwórz podfolder</translation>
+    </message>
+    <message>
+        <source>Don't create subfolder</source>
+        <translation>Nie twórz podfolderu</translation>
     </message>
 </context>
 <context>
@@ -702,10 +714,6 @@
     <message>
         <source>Password:</source>
         <translation>Hasło:</translation>
-    </message>
-    <message>
-        <source>Enabled protocol:</source>
-        <translation type="vanished">Włącz protokół:</translation>
     </message>
     <message>
         <source>TCP and μTP</source>
@@ -1387,7 +1395,7 @@
     </message>
     <message>
         <source>Keep top-level folder</source>
-        <translation>Zachowaj folder najwyższego poziomu</translation>
+        <translation type="vanished">Zachowaj folder najwyższego poziomu</translation>
     </message>
     <message>
         <source> min</source>
@@ -1427,6 +1435,26 @@
     </message>
     <message>
         <source>Peer connection protocol:</source>
+        <translation>Protokół połączenia z partnerami:</translation>
+    </message>
+    <message>
+        <source>Support internationalized domain name (IDN) (requires libtorrent &gt;= 1.2.12):</source>
+        <translation>Obsługuj międzynarodowe nazwy domen (IDN) (wymaga libtorrent &gt;= 1.2.12):</translation>
+    </message>
+    <message>
+        <source>Torrent content layout:</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Create subfolder</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Original</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Don't create subfolder</source>
         <translation type="unfinished" />
     </message>
 </context>
@@ -2190,10 +2218,6 @@
         <source>%1 ago</source>
         <comment>e.g.: 1h 20m ago</comment>
         <translation>%1 temu</translation>
-    </message>
-    <message>
-        <source>Allocating</source>
-        <translation type="vanished">Alokowanie</translation>
     </message>
     <message>
         <source>Paused</source>
@@ -3209,16 +3233,6 @@
         <translation>Zawsze</translation>
     </message>
     <message>
-        <source>Smart Episode Filter will check the episode number to prevent downloading of duplicates.
-Supports the formats: S01E01, 1x1, 2017.01.01 and 01.01.2017 (Date formats also support - as a separator)</source>
-        <translation type="vanished">Inteligentny filtr odcinków sprawdzi numer odcinka, aby zapobiec pobieraniu duplikatów.
-Obsługuje formaty: S01E01, 1x1, 2017.01.01 oraz 01.01.2017 (Formaty daty również obsługiwane - jako separator)</translation>
-    </message>
-    <message>
-        <source>Create Subfolder:</source>
-        <translation>Utwórz podfolder:</translation>
-    </message>
-    <message>
         <source>Episode number is a mandatory positive value</source>
         <translation>Numer odcinka jest obowiązkową wartością dodatnią</translation>
     </message>
@@ -3305,7 +3319,24 @@ Obsługuje formaty: S01E01, 1x1, 2017.01.01 oraz 01.01.2017 (Formaty daty równi
     <message>
         <source>Smart Episode Filter will check the episode number to prevent downloading of duplicates.
 Supports the formats: S01E01, 1x1, 2017.12.31 and 31.12.2017 (Date formats also support - as a separator)</source>
-        <translation type="unfinished" />
+        <translation>Inteligentny filtr odcinków sprawdzi numer odcinka, aby zapobiec pobieraniu duplikatów.
+Obsługuje formaty: S01E01, 1x1, 2017.12.31 oraz 31.12.2017 (Formaty daty również obsługiwane - jako separator)</translation>
+    </message>
+    <message>
+        <source>Torrent content layout:</source>
+        <translation>Układ zawartości torrenta:</translation>
+    </message>
+    <message>
+        <source>Create subfolder</source>
+        <translation>Utwórz podfolder</translation>
+    </message>
+    <message>
+        <source>Original</source>
+        <translation>Pierwotny</translation>
+    </message>
+    <message>
+        <source>Don't create subfolder</source>
+        <translation>Nie twórz podfolderu</translation>
     </message>
 </context>
 <context>

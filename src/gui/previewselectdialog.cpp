@@ -38,7 +38,7 @@
 #include <QShowEvent>
 
 #include "base/bittorrent/common.h"
-#include "base/bittorrent/torrenthandle.h"
+#include "base/bittorrent/torrent.h"
 #include "base/preferences.h"
 #include "base/utils/fs.h"
 #include "base/utils/misc.h"
@@ -48,11 +48,11 @@
 
 #define SETTINGS_KEY(name) "PreviewSelectDialog/" name
 
-PreviewSelectDialog::PreviewSelectDialog(QWidget *parent, const BitTorrent::TorrentHandle *torrent)
+PreviewSelectDialog::PreviewSelectDialog(QWidget *parent, const BitTorrent::Torrent *torrent)
     : QDialog(parent)
     , m_ui(new Ui::PreviewSelectDialog)
     , m_torrent(torrent)
-    , m_storeDialogSize(SETTINGS_KEY("Dimension"))
+    , m_storeDialogSize(SETTINGS_KEY("Size"))
     , m_storeTreeHeaderState(SETTINGS_KEY("HeaderState"))
 {
     m_ui->setupUi(this);
@@ -91,9 +91,8 @@ PreviewSelectDialog::PreviewSelectDialog(QWidget *parent, const BitTorrent::Torr
     {
         QString fileName = torrent->fileName(i);
         if (fileName.endsWith(QB_EXT))
-            fileName.chop(4);
-        QString extension = Utils::Fs::fileExtension(fileName).toUpper();
-        if (Utils::Misc::isPreviewable(extension))
+            fileName.chop(QB_EXT.length());
+        if (Utils::Misc::isPreviewable(fileName))
         {
             int row = m_previewListModel->rowCount();
             m_previewListModel->insertRow(row);
@@ -160,7 +159,7 @@ void PreviewSelectDialog::loadWindowState()
     Utils::Gui::resize(this, m_storeDialogSize);
 
     // Restore TreeView Header state
-    if (!m_storeTreeHeaderState.value().isEmpty())
+    if (!m_storeTreeHeaderState.get().isEmpty())
     {
         m_headerStateInitialized = m_ui->previewList->header()->restoreState(m_storeTreeHeaderState);
     }

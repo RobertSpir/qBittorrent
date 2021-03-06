@@ -29,9 +29,11 @@
 #include "serialize_torrent.h"
 
 #include <QDateTime>
+#include <QSet>
+#include <QVector>
 
 #include "base/bittorrent/infohash.h"
-#include "base/bittorrent/torrenthandle.h"
+#include "base/bittorrent/torrent.h"
 #include "base/bittorrent/trackerentry.h"
 #include "base/utils/fs.h"
 
@@ -82,10 +84,26 @@ namespace
     }
 }
 
-QVariantMap serialize(const BitTorrent::TorrentHandle &torrent)
+QVariantMap serialize(const BitTorrent::Torrent &torrent)
 {
-    QVariantMap ret =
+    const auto adjustQueuePosition = [](const int position) -> int
     {
+        return (position < 0) ? 0 : (position + 1);
+    };
+
+    const auto adjustRatio = [](const qreal ratio) -> qreal
+    {
+        return (ratio > BitTorrent::Torrent::MAX_RATIO) ? -1 : ratio;
+    };
+
+    const auto adjustLastActivity = [&torrent](const qlonglong value) -> qlonglong
+    {
+        return (torrent.isPaused() || torrent.isChecking())
+            ? 0
+            : (QDateTime::currentDateTime().toSecsSinceEpoch() - value);
+    };
+
+    return {
         {KEY_TORRENT_HASH, QString(torrent.hash())},
         {KEY_TORRENT_NAME, torrent.name()},
         {KEY_TORRENT_MAGNET_URI, torrent.createMagnetURI()},
@@ -93,7 +111,7 @@ QVariantMap serialize(const BitTorrent::TorrentHandle &torrent)
         {KEY_TORRENT_PROGRESS, torrent.progress()},
         {KEY_TORRENT_DLSPEED, torrent.downloadPayloadRate()},
         {KEY_TORRENT_UPSPEED, torrent.uploadPayloadRate()},
-        {KEY_TORRENT_QUEUE_POSITION, torrent.queuePosition()},
+        {KEY_TORRENT_QUEUE_POSITION, adjustQueuePosition(torrent.queuePosition())},
         {KEY_TORRENT_SEEDS, torrent.seedsCount()},
         {KEY_TORRENT_NUM_COMPLETE, torrent.totalSeedsCount()},
         {KEY_TORRENT_LEECHS, torrent.leechsCount()},
@@ -124,29 +142,15 @@ QVariantMap serialize(const BitTorrent::TorrentHandle &torrent)
         {KEY_TORRENT_AMOUNT_COMPLETED, torrent.completedSize()},
         {KEY_TORRENT_MAX_RATIO, torrent.maxRatio()},
         {KEY_TORRENT_MAX_SEEDING_TIME, torrent.maxSeedingTime()},
+        {KEY_TORRENT_RATIO, adjustRatio(torrent.realRatio())},
         {KEY_TORRENT_RATIO_LIMIT, torrent.ratioLimit()},
         {KEY_TORRENT_SEEDING_TIME_LIMIT, torrent.seedingTimeLimit()},
         {KEY_TORRENT_LAST_SEEN_COMPLETE_TIME, torrent.lastSeenComplete().toSecsSinceEpoch()},
         {KEY_TORRENT_AUTO_TORRENT_MANAGEMENT, torrent.isAutoTMMEnabled()},
         {KEY_TORRENT_TIME_ACTIVE, torrent.activeTime()},
+        {KEY_TORRENT_LAST_ACTIVITY_TIME, adjustLastActivity(torrent.timeSinceActivity())},
         {KEY_TORRENT_AVAILABILITY, torrent.distributedCopies()},
 
         {KEY_TORRENT_TOTAL_SIZE, torrent.totalSize()}
     };
-
-    const qreal ratio = torrent.realRatio();
-    ret[KEY_TORRENT_RATIO] = (ratio > BitTorrent::TorrentHandle::MAX_RATIO) ? -1 : ratio;
-
-    if (torrent.isPaused() || torrent.isChecking())
-    {
-        ret[KEY_TORRENT_LAST_ACTIVITY_TIME] = 0;
-    }
-    else
-    {
-        const qint64 dt = (QDateTime::currentDateTime().toSecsSinceEpoch()
-            - torrent.timeSinceActivity());
-        ret[KEY_TORRENT_LAST_ACTIVITY_TIME] = dt;
-    }
-
-    return ret;
 }

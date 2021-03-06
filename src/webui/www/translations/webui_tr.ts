@@ -27,8 +27,20 @@
         <translation>Torrent Yönetim Kipi:</translation>
     </message>
     <message>
-        <source>Keep top-level folder</source>
-        <translation>En üst seviyedeki klasörü tut</translation>
+        <source>Content layout:</source>
+        <translation>İçerik düzeni:</translation>
+    </message>
+    <message>
+        <source>Original</source>
+        <translation>Orijinal</translation>
+    </message>
+    <message>
+        <source>Create subfolder</source>
+        <translation>Alt klasör oluştur</translation>
+    </message>
+    <message>
+        <source>Don't create subfolder</source>
+        <translation>Alt klasör oluşturma</translation>
     </message>
 </context>
 <context>
@@ -702,10 +714,6 @@
     <message>
         <source>Password:</source>
         <translation>Parola:</translation>
-    </message>
-    <message>
-        <source>Enabled protocol:</source>
-        <translation type="vanished">Etkinleştirilmiş protokol:</translation>
     </message>
     <message>
         <source>TCP and μTP</source>
@@ -1387,7 +1395,7 @@
     </message>
     <message>
         <source>Keep top-level folder</source>
-        <translation>En üst seviyedeki klasörü tut</translation>
+        <translation type="vanished">En üst seviyedeki klasörü tut</translation>
     </message>
     <message>
         <source> min</source>
@@ -1427,6 +1435,26 @@
     </message>
     <message>
         <source>Peer connection protocol:</source>
+        <translation>Kişi bağlantı protokolü:</translation>
+    </message>
+    <message>
+        <source>Support internationalized domain name (IDN) (requires libtorrent &gt;= 1.2.12):</source>
+        <translation>Uluslararasılaştırılmış etki alanı adını (IDN) destekle (libtorrent &gt;= 1.2.12 gerektirir):</translation>
+    </message>
+    <message>
+        <source>Torrent content layout:</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Create subfolder</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Original</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Don't create subfolder</source>
         <translation type="unfinished" />
     </message>
 </context>
@@ -2190,10 +2218,6 @@
         <source>%1 ago</source>
         <comment>e.g.: 1h 20m ago</comment>
         <translation>%1 önce</translation>
-    </message>
-    <message>
-        <source>Allocating</source>
-        <translation type="vanished">Ayrılıyor</translation>
     </message>
     <message>
         <source>Paused</source>
@@ -3209,16 +3233,6 @@
         <translation>Her zaman</translation>
     </message>
     <message>
-        <source>Smart Episode Filter will check the episode number to prevent downloading of duplicates.
-Supports the formats: S01E01, 1x1, 2017.01.01 and 01.01.2017 (Date formats also support - as a separator)</source>
-        <translation type="vanished">Akıllı Bölüm Süzgeci, kopyalarının indirilmesi önlemek için bölüm numaralarını denetleyecek.
-Desteklenen biçimler: S01E01, 1x1, 2017.01.01 ve 01.01.2017 (Tarih biçimleri de bir ayıraç olarak - karakterini destekler)</translation>
-    </message>
-    <message>
-        <source>Create Subfolder:</source>
-        <translation>Alt Klasör Oluştur:</translation>
-    </message>
-    <message>
         <source>Episode number is a mandatory positive value</source>
         <translation>Bölüm numarası mecburen pozitif bir değerdir</translation>
     </message>
@@ -3305,7 +3319,24 @@ Desteklenen biçimler: S01E01, 1x1, 2017.01.01 ve 01.01.2017 (Tarih biçimleri d
     <message>
         <source>Smart Episode Filter will check the episode number to prevent downloading of duplicates.
 Supports the formats: S01E01, 1x1, 2017.12.31 and 31.12.2017 (Date formats also support - as a separator)</source>
-        <translation type="unfinished" />
+        <translation>Akıllı Bölüm Süzgeci, kopyalarının indirilmesi önlemek için bölüm numaralarını denetleyecek.
+Desteklenen biçimler: S01E01, 1x1, 2017.12.31 ve 31.12.2017 (Tarih biçimleri de bir ayıraç olarak - karakterini destekler)</translation>
+    </message>
+    <message>
+        <source>Torrent content layout:</source>
+        <translation>Torrent içerik düzeni:</translation>
+    </message>
+    <message>
+        <source>Create subfolder</source>
+        <translation>Alt klasör oluştur</translation>
+    </message>
+    <message>
+        <source>Original</source>
+        <translation>Orijinal</translation>
+    </message>
+    <message>
+        <source>Don't create subfolder</source>
+        <translation>Alt klasör oluşturma</translation>
     </message>
 </context>
 <context>

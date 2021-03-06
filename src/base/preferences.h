@@ -27,19 +27,17 @@
  * exception statement from your version.
  */
 
-#ifndef PREFERENCES_H
-#define PREFERENCES_H
+#pragma once
 
-#include <QList>
+#include <QtContainerFwd>
+#include <QVariant>
 
 #include "base/utils/net.h"
 
 class QDateTime;
 class QNetworkCookie;
 class QSize;
-class QStringList;
 class QTime;
-class QVariant;
 
 enum SchedulerDays
 {
@@ -317,6 +315,8 @@ public:
     void setCloseToTrayNotified(bool b);
     TrayIcon::Style trayIconStyle() const;
     void setTrayIconStyle(TrayIcon::Style style);
+    bool iconsInMenusEnabled() const;
+    void setIconsInMenusEnabled(bool enable);
 #endif // Q_OS_MACOS
 
     // Stuff that don't appear in the Options GUI but are saved
@@ -333,10 +333,6 @@ public:
     void setMainVSplitterState(const QByteArray &state);
     QString getMainLastDir() const;
     void setMainLastDir(const QString &path);
-    QSize getPrefSize() const;
-    void setPrefSize(const QSize &size);
-    QStringList getPrefHSplitterSizes() const;
-    void setPrefHSplitterSizes(const QStringList &sizes);
     QByteArray getPeerListState() const;
     void setPeerListState(const QByteArray &state);
     QString getPropSplitterSizes() const;
@@ -406,5 +402,3 @@ public slots:
 
     void apply();
 };
-
-#endif // PREFERENCES_H

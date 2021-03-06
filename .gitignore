@@ -5,6 +5,7 @@ src/qbittorrent-nox
 src/release
 src/debug
 build
+src/base/version.h
 CMakeLists.txt.user*
 qbittorrent.pro.user*
 conf.pri

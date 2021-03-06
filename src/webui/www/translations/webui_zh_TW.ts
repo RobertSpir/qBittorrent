@@ -27,8 +27,20 @@
         <translation>Torrent 管理模式：</translation>
     </message>
     <message>
-        <source>Keep top-level folder</source>
-        <translation>保留頂層資料夾</translation>
+        <source>Content layout:</source>
+        <translation>內容佈局：</translation>
+    </message>
+    <message>
+        <source>Original</source>
+        <translation>原始</translation>
+    </message>
+    <message>
+        <source>Create subfolder</source>
+        <translation>建立子資料夾</translation>
+    </message>
+    <message>
+        <source>Don't create subfolder</source>
+        <translation>不要建立子資料夾</translation>
     </message>
 </context>
 <context>
@@ -702,10 +714,6 @@
     <message>
         <source>Password:</source>
         <translation>密碼：</translation>
-    </message>
-    <message>
-        <source>Enabled protocol:</source>
-        <translation type="vanished">已啟用協定：</translation>
     </message>
     <message>
         <source>TCP and μTP</source>
@@ -1387,7 +1395,7 @@
     </message>
     <message>
         <source>Keep top-level folder</source>
-        <translation>保留頂層資料夾</translation>
+        <translation type="vanished">保留頂層資料夾</translation>
     </message>
     <message>
         <source> min</source>
@@ -1427,6 +1435,26 @@
     </message>
     <message>
         <source>Peer connection protocol:</source>
+        <translation>下載者連線協定：</translation>
+    </message>
+    <message>
+        <source>Support internationalized domain name (IDN) (requires libtorrent &gt;= 1.2.12):</source>
+        <translation>支援國際化域名 (IDN)（需要 libtorrent &gt;= 1.2.12）：</translation>
+    </message>
+    <message>
+        <source>Torrent content layout:</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Create subfolder</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Original</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Don't create subfolder</source>
         <translation type="unfinished" />
     </message>
 </context>
@@ -2190,10 +2218,6 @@
         <source>%1 ago</source>
         <comment>e.g.: 1h 20m ago</comment>
         <translation>%1 前</translation>
-    </message>
-    <message>
-        <source>Allocating</source>
-        <translation type="vanished">分配中</translation>
     </message>
     <message>
         <source>Paused</source>
@@ -3209,16 +3233,6 @@
         <translation>總是</translation>
     </message>
     <message>
-        <source>Smart Episode Filter will check the episode number to prevent downloading of duplicates.
-Supports the formats: S01E01, 1x1, 2017.01.01 and 01.01.2017 (Date formats also support - as a separator)</source>
-        <translation type="vanished">智慧型章節過濾器將會檢查章節名稱以避免重複下載。
-支援的格式：S01E01, 1x1, 2017.01.01 與 01.01.2017（日期格式也支援使用 - 作為分隔符號）</translation>
-    </message>
-    <message>
-        <source>Create Subfolder:</source>
-        <translation>建立子資料夾：</translation>
-    </message>
-    <message>
         <source>Episode number is a mandatory positive value</source>
         <translation>章節的數字為一強制正值</translation>
     </message>
@@ -3305,7 +3319,24 @@ Supports the formats: S01E01, 1x1, 2017.01.01 and 01.01.2017 (Date formats also 
     <message>
         <source>Smart Episode Filter will check the episode number to prevent downloading of duplicates.
 Supports the formats: S01E01, 1x1, 2017.12.31 and 31.12.2017 (Date formats also support - as a separator)</source>
-        <translation type="unfinished" />
+        <translation>智慧型章節過濾器將會檢查章節名稱以避免重複下載。
+支援的格式：S01E01, 1x1, 2017.12.31 and 31.12.2017（日期格式也支援使用 - 作為分隔符號）</translation>
+    </message>
+    <message>
+        <source>Torrent content layout:</source>
+        <translation>Torretn 內容佈局：</translation>
+    </message>
+    <message>
+        <source>Create subfolder</source>
+        <translation>建立子資料夾</translation>
+    </message>
+    <message>
+        <source>Original</source>
+        <translation>原始</translation>
+    </message>
+    <message>
+        <source>Don't create subfolder</source>
+        <translation>不要建立子資料夾</translation>
     </message>
 </context>
 <context>

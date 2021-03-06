@@ -27,8 +27,20 @@
         <translation>Режим управления торрентом:</translation>
     </message>
     <message>
-        <source>Keep top-level folder</source>
-        <translation>Сохранять папку верхнего уровня</translation>
+        <source>Content layout:</source>
+        <translation>Размещение содержимого:</translation>
+    </message>
+    <message>
+        <source>Original</source>
+        <translation>Исходное</translation>
+    </message>
+    <message>
+        <source>Create subfolder</source>
+        <translation>Создавать подпапку</translation>
+    </message>
+    <message>
+        <source>Don't create subfolder</source>
+        <translation>Не создавать подпапку</translation>
     </message>
 </context>
 <context>
@@ -373,7 +385,7 @@
     </message>
     <message>
         <source>Tools</source>
-        <translation>Инструменты</translation>
+        <translation>Сервис</translation>
     </message>
     <message>
         <source>File</source>
@@ -702,10 +714,6 @@
     <message>
         <source>Password:</source>
         <translation>Пароль:</translation>
-    </message>
-    <message>
-        <source>Enabled protocol:</source>
-        <translation type="vanished">Используемый протокол:</translation>
     </message>
     <message>
         <source>TCP and μTP</source>
@@ -1335,7 +1343,7 @@
     </message>
     <message>
         <source>Hashing threads (requires libtorrent &gt;= 2.0):</source>
-        <translation>Потоки херширования (требуется libtorrent &gt;= 2.0):</translation>
+        <translation>Потоки хеширования (требуется libtorrent &gt;= 2.0):</translation>
     </message>
     <message>
         <source>Coalesce reads &amp; writes (requires libtorrent &lt; 2.0):</source>
@@ -1387,7 +1395,7 @@
     </message>
     <message>
         <source>Keep top-level folder</source>
-        <translation>Сохранять папку верхнего уровня</translation>
+        <translation type="vanished">Сохранять родительскую папку</translation>
     </message>
     <message>
         <source> min</source>
@@ -1399,11 +1407,11 @@
     </message>
     <message>
         <source>Optional IP address to bind to:</source>
-        <translation>Выбранный IP-адрес для привязки </translation>
+        <translation>Выбранный IP-адрес для привязки:</translation>
     </message>
     <message>
         <source>Disallow connection to peers on privileged ports:</source>
-        <translation>Запретить подключение к пирам на привилегированных портах:</translation>
+        <translation>Не подключаться к пирам по привилегированным портам:</translation>
     </message>
     <message>
         <source>Enable auto downloading of RSS torrents</source>
@@ -1427,6 +1435,26 @@
     </message>
     <message>
         <source>Peer connection protocol:</source>
+        <translation>Протокол подключения к пирам:</translation>
+    </message>
+    <message>
+        <source>Support internationalized domain name (IDN) (requires libtorrent &gt;= 1.2.12):</source>
+        <translation>Поддерживать интернационализованные доменные имена (IDN) (требуется libtorrent &gt;= 1.2.12):</translation>
+    </message>
+    <message>
+        <source>Torrent content layout:</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Create subfolder</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Original</source>
+        <translation type="unfinished" />
+    </message>
+    <message>
+        <source>Don't create subfolder</source>
         <translation type="unfinished" />
     </message>
 </context>
@@ -2190,10 +2218,6 @@
         <source>%1 ago</source>
         <comment>e.g.: 1h 20m ago</comment>
         <translation>%1 назад</translation>
-    </message>
-    <message>
-        <source>Allocating</source>
-        <translation type="vanished">Резервирует место</translation>
     </message>
     <message>
         <source>Paused</source>
@@ -3209,16 +3233,6 @@
         <translation>Всегда</translation>
     </message>
     <message>
-        <source>Smart Episode Filter will check the episode number to prevent downloading of duplicates.
-Supports the formats: S01E01, 1x1, 2017.01.01 and 01.01.2017 (Date formats also support - as a separator)</source>
-        <translation type="vanished">Умный фильтр эпизодов проверит номера, чтобы не допустить загрузки повторов.
-Поддерживает форматы: S01E01, 1x1, 2017.01.01 и 01.01.2017 (Форматы дат также принимают «-» в качестве разделителя)</translation>
-    </message>
-    <message>
-        <source>Create Subfolder:</source>
-        <translation>Создать подпапку:</translation>
-    </message>
-    <message>
         <source>Episode number is a mandatory positive value</source>
         <translation>Номер эпизода должен быть ненулевым</translation>
     </message>
@@ -3305,7 +3319,24 @@ Supports the formats: S01E01, 1x1, 2017.01.01 and 01.01.2017 (Date formats also 
     <message>
         <source>Smart Episode Filter will check the episode number to prevent downloading of duplicates.
 Supports the formats: S01E01, 1x1, 2017.12.31 and 31.12.2017 (Date formats also support - as a separator)</source>
-        <translation type="unfinished" />
+        <translation>Умный фильтр эпизодов проверит номера, чтобы не допустить загрузки повторов.
+Поддерживает форматы: S01E01, 1x1, 2017.12.31 и 31.12.2017 (Форматы дат также принимают «-» в качестве разделителя)</translation>
+    </message>
+    <message>
+        <source>Torrent content layout:</source>
+        <translation>Размещение содержимого торрента:</translation>
+    </message>
+    <message>
+        <source>Create subfolder</source>
+        <translation>Создавать подпапку</translation>
+    </message>
+    <message>
+        <source>Original</source>
+        <translation>Исходное</translation>
+    </message>
+    <message>
+        <source>Don't create subfolder</source>
+        <translation>Не создавать подпапку</translation>
     </message>
 </context>
 <context>

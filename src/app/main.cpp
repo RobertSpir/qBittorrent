@@ -78,6 +78,7 @@ Q_IMPORT_PLUGIN(QICOPlugin)
 
 #include "base/preferences.h"
 #include "base/profile.h"
+#include "base/version.h"
 #include "application.h"
 #include "cmdoptions.h"
 #include "upgrade.h"
@@ -250,6 +251,9 @@ int main(int argc, char *argv[])
 
         // On OS X the standard is to not show icons in the menus
         app->setAttribute(Qt::AA_DontShowIconsInMenus);
+#else
+        if (!Preferences::instance()->iconsInMenusEnabled())
+            app->setAttribute(Qt::AA_DontShowIconsInMenus);
 #endif
 
         if (!firstTimeUser)
