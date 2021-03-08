@@ -188,6 +188,9 @@ StatusFilterWidget::StatusFilterWidget(QWidget *parent, TransferListWidget *tran
     auto *seeding = new QListWidgetItem(this);
     seeding->setData(Qt::DisplayRole, tr("Seeding (0)"));
     seeding->setData(Qt::DecorationRole, UIThemeManager::instance()->getIcon(QLatin1String("uploading")));
+    auto* seedingGood = new QListWidgetItem(this);
+    seedingGood->setData(Qt::DisplayRole, tr("Seeding with good ratio (0)"));
+    seedingGood->setData(Qt::DecorationRole, UIThemeManager::instance()->getIcon(QLatin1String("uploading")));
     auto *completed = new QListWidgetItem(this);
     completed->setData(Qt::DisplayRole, tr("Completed (0)"));
     completed->setData(Qt::DecorationRole, UIThemeManager::instance()->getIcon(QLatin1String("completed")));
@@ -209,6 +212,9 @@ StatusFilterWidget::StatusFilterWidget(QWidget *parent, TransferListWidget *tran
     auto *stalledUploading = new QListWidgetItem(this);
     stalledUploading->setData(Qt::DisplayRole, tr("Stalled Uploading (0)"));
     stalledUploading->setData(Qt::DecorationRole, UIThemeManager::instance()->getIcon(QLatin1String("stalledUP")));
+    auto* stalledUploadingGood = new QListWidgetItem(this);
+    stalledUploadingGood->setData(Qt::DisplayRole, tr("Stalled Uploading with good ratio (0)"));
+    stalledUploadingGood->setData(Qt::DecorationRole, UIThemeManager::instance()->getIcon(QLatin1String("stalledUP")));
     auto *stalledDownloading = new QListWidgetItem(this);
     stalledDownloading->setData(Qt::DisplayRole, tr("Stalled Downloading (0)"));
     stalledDownloading->setData(Qt::DecorationRole, UIThemeManager::instance()->getIcon(QLatin1String("stalledDL")));
@@ -230,6 +236,7 @@ void StatusFilterWidget::updateTorrentNumbers()
 {
     int nbDownloading = 0;
     int nbSeeding = 0;
+    int nbSeedingGood = 0;
     int nbCompleted = 0;
     int nbResumed = 0;
     int nbPaused = 0;
@@ -237,6 +244,7 @@ void StatusFilterWidget::updateTorrentNumbers()
     int nbInactive = 0;
     int nbStalled = 0;
     int nbStalledUploading = 0;
+    int nbStalledUploadingGood = 0;
     int nbStalledDownloading = 0;
     int nbErrored = 0;
 
@@ -247,6 +255,8 @@ void StatusFilterWidget::updateTorrentNumbers()
             ++nbDownloading;
         if (torrent->isUploading())
             ++nbSeeding;
+        if (torrent->state() == BitTorrent::TorrentState::UploadingGoodRatio)
+            ++nbSeedingGood;
         if (torrent->isCompleted())
             ++nbCompleted;
         if (torrent->isResumed())
@@ -259,17 +269,20 @@ void StatusFilterWidget::updateTorrentNumbers()
             ++nbInactive;
         if (torrent->state() ==  BitTorrent::TorrentState::StalledUploading)
             ++nbStalledUploading;
+        if (torrent->state() == BitTorrent::TorrentState::StalledUploadingGoodRatio)
+            ++nbStalledUploadingGood;
         if (torrent->state() ==  BitTorrent::TorrentState::StalledDownloading)
             ++nbStalledDownloading;
         if (torrent->isErrored())
             ++nbErrored;
     }
 
-    nbStalled = nbStalledUploading + nbStalledDownloading;
+    nbStalled = nbStalledUploading + nbStalledDownloading + nbStalledUploadingGood;
 
     item(TorrentFilter::All)->setData(Qt::DisplayRole, tr("All (%1)").arg(torrents.count()));
     item(TorrentFilter::Downloading)->setData(Qt::DisplayRole, tr("Downloading (%1)").arg(nbDownloading));
     item(TorrentFilter::Seeding)->setData(Qt::DisplayRole, tr("Seeding (%1)").arg(nbSeeding));
+    item(TorrentFilter::SeedingGoodRatio)->setData(Qt::DisplayRole, tr("Seeding with good ratio (%1)").arg(nbSeedingGood));
     item(TorrentFilter::Completed)->setData(Qt::DisplayRole, tr("Completed (%1)").arg(nbCompleted));
     item(TorrentFilter::Resumed)->setData(Qt::DisplayRole, tr("Resumed (%1)").arg(nbResumed));
     item(TorrentFilter::Paused)->setData(Qt::DisplayRole, tr("Paused (%1)").arg(nbPaused));
@@ -277,6 +290,7 @@ void StatusFilterWidget::updateTorrentNumbers()
     item(TorrentFilter::Inactive)->setData(Qt::DisplayRole, tr("Inactive (%1)").arg(nbInactive));
     item(TorrentFilter::Stalled)->setData(Qt::DisplayRole, tr("Stalled (%1)").arg(nbStalled));
     item(TorrentFilter::StalledUploading)->setData(Qt::DisplayRole, tr("Stalled Uploading (%1)").arg(nbStalledUploading));
+    item(TorrentFilter::StalledUploadingGoodRatio)->setData(Qt::DisplayRole, tr("Stalled Uploading with good ratio (%1)").arg(nbStalledUploadingGood));
     item(TorrentFilter::StalledDownloading)->setData(Qt::DisplayRole, tr("Stalled Downloading (%1)").arg(nbStalledDownloading));
     item(TorrentFilter::Errored)->setData(Qt::DisplayRole, tr("Errored (%1)").arg(nbErrored));
 }

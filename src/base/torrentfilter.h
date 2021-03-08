@@ -48,6 +48,7 @@ public:
         All,
         Downloading,
         Seeding,
+        SeedingGoodRatio,
         Completed,
         Resumed,
         Paused,
@@ -55,6 +56,7 @@ public:
         Inactive,
         Stalled,
         StalledUploading,
+        StalledUploadingGoodRatio,
         StalledDownloading,
         Errored
     };
@@ -66,6 +68,7 @@ public:
 
     static const TorrentFilter DownloadingTorrent;
     static const TorrentFilter SeedingTorrent;
+    static const TorrentFilter SeedingGoodRatioTorrent;
     static const TorrentFilter CompletedTorrent;
     static const TorrentFilter PausedTorrent;
     static const TorrentFilter ResumedTorrent;
@@ -73,6 +76,7 @@ public:
     static const TorrentFilter InactiveTorrent;
     static const TorrentFilter StalledTorrent;
     static const TorrentFilter StalledUploadingTorrent;
+    static const TorrentFilter StalledUploadingGoodRatioTorrent;
     static const TorrentFilter StalledDownloadingTorrent;
     static const TorrentFilter ErroredTorrent;
 

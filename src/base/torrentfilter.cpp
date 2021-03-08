@@ -37,6 +37,7 @@ const QString TorrentFilter::AnyTag;
 
 const TorrentFilter TorrentFilter::DownloadingTorrent(TorrentFilter::Downloading);
 const TorrentFilter TorrentFilter::SeedingTorrent(TorrentFilter::Seeding);
+const TorrentFilter TorrentFilter::SeedingGoodRatioTorrent(TorrentFilter::SeedingGoodRatio);
 const TorrentFilter TorrentFilter::CompletedTorrent(TorrentFilter::Completed);
 const TorrentFilter TorrentFilter::PausedTorrent(TorrentFilter::Paused);
 const TorrentFilter TorrentFilter::ResumedTorrent(TorrentFilter::Resumed);
@@ -44,6 +45,7 @@ const TorrentFilter TorrentFilter::ActiveTorrent(TorrentFilter::Active);
 const TorrentFilter TorrentFilter::InactiveTorrent(TorrentFilter::Inactive);
 const TorrentFilter TorrentFilter::StalledTorrent(TorrentFilter::Stalled);
 const TorrentFilter TorrentFilter::StalledUploadingTorrent(TorrentFilter::StalledUploading);
+const TorrentFilter TorrentFilter::StalledUploadingGoodRatioTorrent(TorrentFilter::StalledUploadingGoodRatio);
 const TorrentFilter TorrentFilter::StalledDownloadingTorrent(TorrentFilter::StalledDownloading);
 const TorrentFilter TorrentFilter::ErroredTorrent(TorrentFilter::Errored);
 
@@ -163,6 +165,8 @@ bool TorrentFilter::matchState(const BitTorrent::Torrent *const torrent) const
         return torrent->isDownloading();
     case Seeding:
         return torrent->isUploading();
+    case SeedingGoodRatio:
+        return torrent->state() == BitTorrent::TorrentState::UploadingGoodRatio;
     case Completed:
         return torrent->isCompleted();
     case Paused:
@@ -175,13 +179,17 @@ bool TorrentFilter::matchState(const BitTorrent::Torrent *const torrent) const
         return torrent->isInactive();
     case Stalled:
         return (torrent->state() ==  BitTorrent::TorrentState::StalledUploading)
-                || (torrent->state() ==  BitTorrent::TorrentState::StalledDownloading);
+                || (torrent->state() ==  BitTorrent::TorrentState::StalledDownloading)
+                || (torrent->state() == BitTorrent::TorrentState::StalledUploadingGoodRatio);
     case StalledUploading:
         return torrent->state() ==  BitTorrent::TorrentState::StalledUploading;
+    case StalledUploadingGoodRatio:
+        return torrent->state() == BitTorrent::TorrentState::StalledUploadingGoodRatio;
     case StalledDownloading:
         return torrent->state() ==  BitTorrent::TorrentState::StalledDownloading;
     case Errored:
         return torrent->isErrored();
+   
     default: // All
         return true;
     }

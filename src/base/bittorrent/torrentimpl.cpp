@@ -665,6 +665,7 @@ bool TorrentImpl::isUploading() const
 {
     return m_state == TorrentState::Uploading
             || m_state == TorrentState::StalledUploading
+			|| m_state == TorrentState::StalledUploadingGoodRatio
             || m_state == TorrentState::CheckingUploading
             || m_state == TorrentState::QueuedUploading
             || m_state == TorrentState::ForcedUploading
@@ -675,6 +676,7 @@ bool TorrentImpl::isCompleted() const
 {
     return m_state == TorrentState::Uploading
             || m_state == TorrentState::StalledUploading
+			|| m_state == TorrentState::StalledUploadingGoodRatio
             || m_state == TorrentState::CheckingUploading
             || m_state == TorrentState::PausedUploading
             || m_state == TorrentState::QueuedUploading
@@ -785,7 +787,7 @@ void TorrentImpl::updateState()
         else
 		{
             if (realRatio() > 1.0)
-                m_state = TorrentState::UploadingGoodRatio;
+                m_state = TorrentState::StalledUploadingGoodRatio;
             else
                 m_state = TorrentState::StalledUploading;
 		}

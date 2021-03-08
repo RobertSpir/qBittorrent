@@ -66,6 +66,7 @@ namespace BitTorrent
         ForcedUploading,
         Uploading,
         StalledUploading,
+		StalledUploadingGoodRatio,
         UploadingGoodRatio,
 
         CheckingResumeData,

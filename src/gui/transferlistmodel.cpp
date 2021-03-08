@@ -677,6 +677,7 @@ QIcon TransferListModel::getIconByState(const BitTorrent::TorrentState state)
     case BitTorrent::TorrentState::StalledDownloading:
         return getStalledDownloadingIcon();
     case BitTorrent::TorrentState::StalledUploading:
+	case BitTorrent::TorrentState::StalledUploadingGoodRatio:
         return getStalledUploadingIcon();
     case BitTorrent::TorrentState::Uploading:
     case BitTorrent::TorrentState::UploadingGoodRatio:
@@ -725,8 +726,10 @@ QColor getDefaultColorByState(const BitTorrent::TorrentState state)
             return QColor(0, 100, 0);
         else
             return {204, 204, 204}; // Gray 80
+	case BitTorrent::TorrentState::StalledUploadingGoodRatio:
+        return QColor(130, 0, 130);
     case BitTorrent::TorrentState::UploadingGoodRatio:
-        return QColor(153, 0, 153);
+        return QColor(230, 0, 230);
     case BitTorrent::TorrentState::Uploading:
     case BitTorrent::TorrentState::ForcedUploading:
         if (!dark)

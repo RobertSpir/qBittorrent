@@ -55,6 +55,7 @@ namespace
         case BitTorrent::TorrentState::QueuedUploading:
             return QLatin1String("queuedUP");
         case BitTorrent::TorrentState::StalledUploading:
+		case BitTorrent::TorrentState::StalledUploadingGoodRatio:
             return QLatin1String("stalledUP");
         case BitTorrent::TorrentState::CheckingUploading:
             return QLatin1String("checkingUP");
