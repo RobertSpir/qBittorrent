@@ -776,11 +776,19 @@ void TorrentImpl::updateState()
         else if (isForced())
             m_state = TorrentState::ForcedUploading;
         else if (m_nativeStatus.upload_payload_rate > 0)
-            m_state = TorrentState::Uploading;
+        {
+            if (realRatio() > 1.0)
+                m_state = TorrentState::UploadingGoodRatio;
+            else
+                m_state = TorrentState::Uploading;
+		}
         else
-            m_state = TorrentState::StalledUploading;
-        if (realRatio() > 1.0)
-            m_state = TorrentState::UploadingGoodRatio;
+		{
+            if (realRatio() > 1.0)
+                m_state = TorrentState::UploadingGoodRatio;
+            else
+                m_state = TorrentState::StalledUploading;
+		}
     }
     else
     {

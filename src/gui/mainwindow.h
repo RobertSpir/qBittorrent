@@ -145,7 +145,7 @@ private slots:
 
 #ifdef Q_OS_WIN
     void pythonDownloadFinished(const Net::DownloadResult &result);
-    void updateTaskbar(BitTorrent::TorrentHandle * torrent);
+    void updateTaskbar(BitTorrent::Torrent* torrent);
 #endif
     void addToolbarContextMenu();
     void manageCookies();
@@ -270,6 +270,4 @@ private:
     QWinThumbnailToolButton *m_resume, *m_pause;
     QPointer<QWinTaskbarButton> m_taskbarButton;
 #endif
-    bool m_hasPython;
-    QMenu *m_toolbarMenu;
 };

@@ -35,7 +35,6 @@
 #include <QShowEvent>
 #include <QStandardItemModel>
 #include <QTableView>
-#include <QShowEvent>
 
 #include "base/bittorrent/common.h"
 #include "base/bittorrent/torrent.h"

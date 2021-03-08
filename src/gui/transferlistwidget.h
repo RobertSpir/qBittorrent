@@ -115,7 +115,7 @@ protected slots:
 signals:
     void currentTorrentChanged(BitTorrent::Torrent *const torrent);
 #ifdef Q_OS_WIN
-    void updateTaskbar(BitTorrent::TorrentHandle *const torrent);
+    void updateTaskbar(BitTorrent::Torrent *const torrent);
 #endif
 
 private:

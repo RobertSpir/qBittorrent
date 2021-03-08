@@ -2240,7 +2240,7 @@ void MainWindow::setupTaskbarButton()
     }
 }
 
-void MainWindow::updateTaskbar(BitTorrent::TorrentHandle* torrent)
+void MainWindow::updateTaskbar(BitTorrent::Torrent* torrent)
 {
     if (!m_taskbarButton)
         return;
