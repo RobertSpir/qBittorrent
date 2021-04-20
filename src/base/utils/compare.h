@@ -1,6 +1,6 @@
 /*
  * Bittorrent Client using Qt and libtorrent.
- * Copyright (C) 2020  Prince Gupta <jagannatharjun11@gmail.com>
+ * Copyright (C) 2021  Mike Tzou (Chocobo1)
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,24 +28,61 @@
 
 #pragma once
 
-#include <QProgressBar>
-#include <QStyledItemDelegate>
+#include <Qt>
+#include <QtGlobal>
 
-class QStyleOptionProgressBar;
+#ifndef Q_OS_WIN
+#define QBT_USE_QCOLLATOR
+#include <QCollator>
+#endif
 
-class ProgressBarDelegate : public QStyledItemDelegate
+class QString;
+
+namespace Utils::Compare
 {
-public:
-    ProgressBarDelegate(int progressColumn, int dataRole, QObject *parent = nullptr);
+#ifdef QBT_USE_QCOLLATOR
+    template <Qt::CaseSensitivity caseSensitivity>
+    class NaturalCompare
+    {
+    public:
+        NaturalCompare()
+        {
+            m_collator.setNumericMode(true);
+            m_collator.setCaseSensitivity(caseSensitivity);
+        }
 
-protected:
-    void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
-    virtual void initProgressStyleOption(QStyleOptionProgressBar &option, const QModelIndex &index) const;
+        int operator()(const QString &left, const QString &right) const
+        {
+            return m_collator.compare(left, right);
+        }
 
-private:
-    const int m_progressColumn;
-    const int m_dataRole;
+    private:
+        QCollator m_collator;
+    };
+#else
+    int naturalCompare(const QString &left, const QString &right, Qt::CaseSensitivity caseSensitivity);
 
-    // for painting progressbar with stylesheet option, a dummy progress bar is required
-    QProgressBar m_dummyProgressBar;
-};
+    template <Qt::CaseSensitivity caseSensitivity>
+    class NaturalCompare
+    {
+    public:
+        int operator()(const QString &left, const QString &right) const
+        {
+            return naturalCompare(left, right, caseSensitivity);
+        }
+    };
+#endif
+
+    template <Qt::CaseSensitivity caseSensitivity>
+    class NaturalLessThan
+    {
+    public:
+        bool operator()(const QString &left, const QString &right) const
+        {
+            return (m_comparator(left, right) < 0);
+        }
+
+    private:
+        NaturalCompare<caseSensitivity> m_comparator;
+    };
+}

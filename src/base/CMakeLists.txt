@@ -5,6 +5,7 @@ add_library(qbt_base STATIC
     bittorrent/abstractfilestorage.h
     bittorrent/addtorrentparams.h
     bittorrent/bandwidthscheduler.h
+    bittorrent/bencoderesumedatastorage.h
     bittorrent/cachestatus.h
     bittorrent/common.h
     bittorrent/customstorage.h
@@ -12,6 +13,7 @@ add_library(qbt_base STATIC
     bittorrent/filesearcher.h
     bittorrent/filterparserthread.h
     bittorrent/infohash.h
+    bittorrent/loadtorrentparams.h
     bittorrent/ltqhash.h
     bittorrent/ltunderlyingtype.h
     bittorrent/magneturi.h
@@ -20,7 +22,7 @@ add_library(qbt_base STATIC
     bittorrent/peeraddress.h
     bittorrent/peerinfo.h
     bittorrent/portforwarderimpl.h
-    bittorrent/resumedatasavingmanager.h
+    bittorrent/resumedatastorage.h
     bittorrent/session.h
     bittorrent/sessionstatus.h
     bittorrent/speedmonitor.h
@@ -77,6 +79,7 @@ add_library(qbt_base STATIC
     types.h
     unicodestrings.h
     utils/bytearray.h
+    utils/compare.h
     utils/foreignapps.h
     utils/fs.h
     utils/gzip.h
@@ -93,6 +96,7 @@ add_library(qbt_base STATIC
     asyncfilestorage.cpp
     bittorrent/abstractfilestorage.cpp
     bittorrent/bandwidthscheduler.cpp
+    bittorrent/bencoderesumedatastorage.cpp
     bittorrent/customstorage.cpp
     bittorrent/downloadpriority.cpp
     bittorrent/filesearcher.cpp
@@ -104,7 +108,6 @@ add_library(qbt_base STATIC
     bittorrent/peeraddress.cpp
     bittorrent/peerinfo.cpp
     bittorrent/portforwarderimpl.cpp
-    bittorrent/resumedatasavingmanager.cpp
     bittorrent/session.cpp
     bittorrent/speedmonitor.cpp
     bittorrent/statistics.cpp
@@ -152,6 +155,7 @@ add_library(qbt_base STATIC
     torrentfileguard.cpp
     torrentfilter.cpp
     utils/bytearray.cpp
+    utils/compare.cpp
     utils/foreignapps.cpp
     utils/fs.cpp
     utils/gzip.cpp

@@ -106,6 +106,7 @@ const char KEY_PROP_SAVE_PATH[] = "save_path";
 const char KEY_PROP_COMMENT[] = "comment";
 
 // File keys
+const char KEY_FILE_INDEX[] = "index";
 const char KEY_FILE_NAME[] = "name";
 const char KEY_FILE_SIZE[] = "size";
 const char KEY_FILE_PROGRESS[] = "progress";
@@ -117,19 +118,21 @@ const char KEY_FILE_AVAILABILITY[] = "availability";
 namespace
 {
     using Utils::String::parseBool;
+    using Utils::String::parseInt;
+    using Utils::String::parseDouble;
 
-    void applyToTorrents(const QStringList &hashes, const std::function<void (BitTorrent::Torrent *torrent)> &func)
+    void applyToTorrents(const QStringList &idList, const std::function<void (BitTorrent::Torrent *torrent)> &func)
     {
-        if ((hashes.size() == 1) && (hashes[0] == QLatin1String("all")))
+        if ((idList.size() == 1) && (idList[0] == QLatin1String("all")))
         {
             for (BitTorrent::Torrent *const torrent : asConst(BitTorrent::Session::instance()->torrents()))
                 func(torrent);
         }
         else
         {
-            for (const QString &hashString : hashes)
+            for (const QString &idString : idList)
             {
-                const auto hash = BitTorrent::InfoHash::fromString(hashString);
+                const auto hash = BitTorrent::TorrentID::fromString(idString);
                 BitTorrent::Torrent *const torrent = BitTorrent::Session::instance()->findTorrent(hash);
                 if (torrent)
                     func(torrent);
@@ -209,20 +212,20 @@ namespace
         return {dht, pex, lsd};
     }
 
-    QVector<BitTorrent::InfoHash> toInfoHashes(const QStringList &hashes)
+    QVector<BitTorrent::TorrentID> toTorrentIDs(const QStringList &idStrings)
     {
-        QVector<BitTorrent::InfoHash> infoHashes;
-        infoHashes.reserve(hashes.size());
-        for (const QString &hash : hashes)
-            infoHashes << BitTorrent::InfoHash::fromString(hash);
-        return infoHashes;
+        QVector<BitTorrent::TorrentID> idList;
+        idList.reserve(idStrings.size());
+        for (const QString &hash : idStrings)
+            idList << BitTorrent::TorrentID::fromString(hash);
+        return idList;
     }
 }
 
 // Returns all the torrents in JSON format.
 // The return value is a JSON-formatted list of dictionaries.
 // The dictionary keys are:
-//   - "hash": Torrent hash
+//   - "hash": Torrent hash (ID)
 //   - "name": Torrent name
 //   - "size": Torrent size
 //   - "progress": Torrent progress
@@ -258,11 +261,11 @@ void TorrentsController::infoAction()
     int offset {params()["offset"].toInt()};
     const QStringList hashes {params()["hashes"].split('|', QString::SkipEmptyParts)};
 
-    InfoHashSet hashSet;
+    TorrentIDSet idSet;
     for (const QString &hash : hashes)
-        hashSet.insert(BitTorrent::InfoHash::fromString(hash));
+        idSet.insert(BitTorrent::TorrentID::fromString(hash));
 
-    const TorrentFilter torrentFilter(filter, (hashes.isEmpty() ? TorrentFilter::AnyHash : hashSet), category);
+    const TorrentFilter torrentFilter(filter, (hashes.isEmpty() ? TorrentFilter::AnyID : idSet), category);
     QVariantList torrentList;
     for (const BitTorrent::Torrent *torrent : asConst(BitTorrent::Session::instance()->torrents()))
     {
@@ -372,8 +375,8 @@ void TorrentsController::propertiesAction()
 {
     requireParams({"hash"});
 
-    const auto hash = BitTorrent::InfoHash::fromString(params()["hash"]);
-    BitTorrent::Torrent *const torrent = BitTorrent::Session::instance()->findTorrent(hash);
+    const auto id = BitTorrent::TorrentID::fromString(params()["hash"]);
+    BitTorrent::Torrent *const torrent = BitTorrent::Session::instance()->findTorrent(id);
     if (!torrent)
         throw APIError(APIErrorType::NotFound);
 
@@ -443,8 +446,8 @@ void TorrentsController::trackersAction()
 {
     requireParams({"hash"});
 
-    const auto hash = BitTorrent::InfoHash::fromString(params()["hash"]);
-    const BitTorrent::Torrent *const torrent = BitTorrent::Session::instance()->findTorrent(hash);
+    const auto id = BitTorrent::TorrentID::fromString(params()["hash"]);
+    const BitTorrent::Torrent *const torrent = BitTorrent::Session::instance()->findTorrent(id);
     if (!torrent)
         throw APIError(APIErrorType::NotFound);
 
@@ -453,18 +456,18 @@ void TorrentsController::trackersAction()
     QHash<QString, BitTorrent::TrackerInfo> trackersData = torrent->trackerInfos();
     for (const BitTorrent::TrackerEntry &tracker : asConst(torrent->trackers()))
     {
-        const BitTorrent::TrackerInfo data = trackersData.value(tracker.url());
+        const BitTorrent::TrackerInfo data = trackersData.value(tracker.url);
 
         trackerList << QJsonObject
         {
-            {KEY_TRACKER_URL, tracker.url()},
-            {KEY_TRACKER_TIER, tracker.tier()},
-            {KEY_TRACKER_STATUS, static_cast<int>(tracker.status())},
+            {KEY_TRACKER_URL, tracker.url},
+            {KEY_TRACKER_TIER, tracker.tier},
+            {KEY_TRACKER_STATUS, static_cast<int>(tracker.status)},
             {KEY_TRACKER_PEERS_COUNT, data.numPeers},
             {KEY_TRACKER_MSG, data.lastMessage.trimmed()},
-            {KEY_TRACKER_SEEDS_COUNT, tracker.numSeeds()},
-            {KEY_TRACKER_LEECHES_COUNT, tracker.numLeeches()},
-            {KEY_TRACKER_DOWNLOADED_COUNT, tracker.numDownloaded()}
+            {KEY_TRACKER_SEEDS_COUNT, tracker.numSeeds},
+            {KEY_TRACKER_LEECHES_COUNT, tracker.numLeeches},
+            {KEY_TRACKER_DOWNLOADED_COUNT, tracker.numDownloaded}
         };
     }
 
@@ -479,8 +482,8 @@ void TorrentsController::webseedsAction()
 {
     requireParams({"hash"});
 
-    const auto hash = BitTorrent::InfoHash::fromString(params()["hash"]);
-    BitTorrent::Torrent *const torrent = BitTorrent::Session::instance()->findTorrent(hash);
+    const auto id = BitTorrent::TorrentID::fromString(params()["hash"]);
+    BitTorrent::Torrent *const torrent = BitTorrent::Session::instance()->findTorrent(id);
     if (!torrent)
         throw APIError(APIErrorType::NotFound);
 
@@ -499,6 +502,7 @@ void TorrentsController::webseedsAction()
 // Returns the files in a torrent in JSON format.
 // The return value is a JSON-formatted list of dictionaries.
 // The dictionary keys are:
+//   - "index": File index
 //   - "name": File name
 //   - "size": File size
 //   - "progress": File progress
@@ -510,10 +514,36 @@ void TorrentsController::filesAction()
 {
     requireParams({"hash"});
 
-    const auto hash = BitTorrent::InfoHash::fromString(params()["hash"]);
-    const BitTorrent::Torrent *const torrent = BitTorrent::Session::instance()->findTorrent(hash);
+    const auto id = BitTorrent::TorrentID::fromString(params()["hash"]);
+    const BitTorrent::Torrent *const torrent = BitTorrent::Session::instance()->findTorrent(id);
     if (!torrent)
         throw APIError(APIErrorType::NotFound);
+
+    const int filesCount = torrent->filesCount();
+    QVector<int> fileIndexes;
+    const auto idxIt = params().constFind(QLatin1String("indexes"));
+    if (idxIt != params().cend())
+    {
+        const QStringList indexStrings = idxIt.value().split('|');
+        fileIndexes.reserve(indexStrings.size());
+        std::transform(indexStrings.cbegin(), indexStrings.cend(), std::back_inserter(fileIndexes)
+                       , [&filesCount](const QString &indexString) -> int
+        {
+            bool ok = false;
+            const int index = indexString.toInt(&ok);
+            if (!ok || (index < 0))
+                throw APIError(APIErrorType::Conflict, tr("\"%1\" is not a valid file index.").arg(indexString));
+            if (index >= filesCount)
+                throw APIError(APIErrorType::Conflict, tr("Index %1 is out of bounds.").arg(indexString));
+            return index;
+        });
+    }
+    else
+    {
+        fileIndexes.reserve(filesCount);
+        for (int i = 0; i < filesCount; ++i)
+            fileIndexes.append(i);
+    }
 
     QJsonArray fileList;
     if (torrent->hasMetadata())
@@ -522,25 +552,26 @@ void TorrentsController::filesAction()
         const QVector<qreal> fp = torrent->filesProgress();
         const QVector<qreal> fileAvailability = torrent->availableFileFractions();
         const BitTorrent::TorrentInfo info = torrent->info();
-        for (int i = 0; i < torrent->filesCount(); ++i)
+        for (const int index : asConst(fileIndexes))
         {
             QJsonObject fileDict =
             {
-                {KEY_FILE_PROGRESS, fp[i]},
-                {KEY_FILE_PRIORITY, static_cast<int>(priorities[i])},
-                {KEY_FILE_SIZE, torrent->fileSize(i)},
-                {KEY_FILE_AVAILABILITY, fileAvailability[i]}
+                {KEY_FILE_INDEX, index},
+                {KEY_FILE_PROGRESS, fp[index]},
+                {KEY_FILE_PRIORITY, static_cast<int>(priorities[index])},
+                {KEY_FILE_SIZE, torrent->fileSize(index)},
+                {KEY_FILE_AVAILABILITY, fileAvailability[index]}
             };
 
-            QString fileName = torrent->filePath(i);
+            QString fileName = torrent->filePath(index);
             if (fileName.endsWith(QB_EXT, Qt::CaseInsensitive))
                 fileName.chop(QB_EXT.size());
             fileDict[KEY_FILE_NAME] = Utils::Fs::toUniformPath(fileName);
 
-            const BitTorrent::TorrentInfo::PieceRange idx = info.filePieces(i);
+            const BitTorrent::TorrentInfo::PieceRange idx = info.filePieces(index);
             fileDict[KEY_FILE_PIECE_RANGE] = QJsonArray {idx.first(), idx.last()};
 
-            if (i == 0)
+            if (index == 0)
                 fileDict[KEY_FILE_IS_SEED] = torrent->isSeed();
 
             fileList.append(fileDict);
@@ -556,8 +587,8 @@ void TorrentsController::pieceHashesAction()
 {
     requireParams({"hash"});
 
-    const auto hash = BitTorrent::InfoHash::fromString(params()["hash"]);
-    BitTorrent::Torrent *const torrent = BitTorrent::Session::instance()->findTorrent(hash);
+    const auto id = BitTorrent::TorrentID::fromString(params()["hash"]);
+    BitTorrent::Torrent *const torrent = BitTorrent::Session::instance()->findTorrent(id);
     if (!torrent)
         throw APIError(APIErrorType::NotFound);
 
@@ -578,8 +609,8 @@ void TorrentsController::pieceStatesAction()
 {
     requireParams({"hash"});
 
-    const auto hash = BitTorrent::InfoHash::fromString(params()["hash"]);
-    BitTorrent::Torrent *const torrent = BitTorrent::Session::instance()->findTorrent(hash);
+    const auto id = BitTorrent::TorrentID::fromString(params()["hash"]);
+    BitTorrent::Torrent *const torrent = BitTorrent::Session::instance()->findTorrent(id);
     if (!torrent)
         throw APIError(APIErrorType::NotFound);
 
@@ -601,6 +632,8 @@ void TorrentsController::pieceStatesAction()
 void TorrentsController::addAction()
 {
     const QString urls = params()["urls"];
+    const QString cookie = params()["cookie"];
+
     const bool skipChecking = parseBool(params()["skip_checking"]).value_or(false);
     const bool seqDownload = parseBool(params()["sequentialDownload"]).value_or(false);
     const bool firstLastPiece = parseBool(params()["firstLastPiecePrio"]).value_or(false);
@@ -608,10 +641,11 @@ void TorrentsController::addAction()
     const QString savepath = params()["savepath"].trimmed();
     const QString category = params()["category"];
     const QSet<QString> tags = List::toSet(params()["tags"].split(',', QString::SkipEmptyParts));
-    const QString cookie = params()["cookie"];
     const QString torrentName = params()["rename"].trimmed();
-    const int upLimit = params()["upLimit"].toInt();
-    const int dlLimit = params()["dlLimit"].toInt();
+    const int upLimit = parseInt(params()["upLimit"]).value_or(-1);
+    const int dlLimit = parseInt(params()["dlLimit"]).value_or(-1);
+    const double ratioLimit = parseDouble(params()["ratioLimit"]).value_or(BitTorrent::Torrent::USE_GLOBAL_RATIO);
+    const int seedingTimeLimit = parseInt(params()["seedingTimeLimit"]).value_or(BitTorrent::Torrent::USE_GLOBAL_SEEDING_TIME);
     const std::optional<bool> autoTMM = parseBool(params()["autoTMM"]);
 
     const QString contentLayoutParam = params()["contentLayout"];
@@ -636,20 +670,22 @@ void TorrentsController::addAction()
         }
     }
 
-    BitTorrent::AddTorrentParams params;
+    BitTorrent::AddTorrentParams addTorrentParams;
     // TODO: Check if destination actually exists
-    params.skipChecking = skipChecking;
-    params.sequential = seqDownload;
-    params.firstLastPiecePriority = firstLastPiece;
-    params.addPaused = addPaused;
-    params.contentLayout = contentLayout;
-    params.savePath = savepath;
-    params.category = category;
-    params.tags = tags;
-    params.name = torrentName;
-    params.uploadLimit = (upLimit > 0) ? upLimit : -1;
-    params.downloadLimit = (dlLimit > 0) ? dlLimit : -1;
-    params.useAutoTMM = autoTMM;
+    addTorrentParams.skipChecking = skipChecking;
+    addTorrentParams.sequential = seqDownload;
+    addTorrentParams.firstLastPiecePriority = firstLastPiece;
+    addTorrentParams.addPaused = addPaused;
+    addTorrentParams.contentLayout = contentLayout;
+    addTorrentParams.savePath = savepath;
+    addTorrentParams.category = category;
+    addTorrentParams.tags = tags;
+    addTorrentParams.name = torrentName;
+    addTorrentParams.uploadLimit = upLimit;
+    addTorrentParams.downloadLimit = dlLimit;
+    addTorrentParams.seedingTimeLimit = seedingTimeLimit;
+    addTorrentParams.ratioLimit = ratioLimit;
+    addTorrentParams.useAutoTMM = autoTMM;
 
     bool partialSuccess = false;
     for (QString url : asConst(urls.split('\n')))
@@ -658,7 +694,7 @@ void TorrentsController::addAction()
         if (!url.isEmpty())
         {
             Net::DownloadManager::instance()->setCookiesFromUrl(cookies, QUrl::fromEncoded(url.toUtf8()));
-            partialSuccess |= BitTorrent::Session::instance()->addTorrent(url, params);
+            partialSuccess |= BitTorrent::Session::instance()->addTorrent(url, addTorrentParams);
         }
     }
 
@@ -671,7 +707,7 @@ void TorrentsController::addAction()
                            , tr("Error: '%1' is not a valid torrent file.").arg(it.key()));
         }
 
-        partialSuccess |= BitTorrent::Session::instance()->addTorrent(torrentInfo, params);
+        partialSuccess |= BitTorrent::Session::instance()->addTorrent(torrentInfo, addTorrentParams);
     }
 
     if (partialSuccess)
@@ -684,8 +720,8 @@ void TorrentsController::addTrackersAction()
 {
     requireParams({"hash", "urls"});
 
-    const auto hash = BitTorrent::InfoHash::fromString(params()["hash"]);
-    BitTorrent::Torrent *const torrent = BitTorrent::Session::instance()->findTorrent(hash);
+    const auto id = BitTorrent::TorrentID::fromString(params()["hash"]);
+    BitTorrent::Torrent *const torrent = BitTorrent::Session::instance()->findTorrent(id);
     if (!torrent)
         throw APIError(APIErrorType::NotFound);
 
@@ -694,7 +730,7 @@ void TorrentsController::addTrackersAction()
     {
         const QUrl url {urlStr.trimmed()};
         if (url.isValid())
-            trackers << url.toString();
+            trackers.append({url.toString()});
     }
     torrent->addTrackers(trackers);
 }
@@ -703,11 +739,11 @@ void TorrentsController::editTrackerAction()
 {
     requireParams({"hash", "origUrl", "newUrl"});
 
-    const auto hash = BitTorrent::InfoHash::fromString(params()["hash"]);
+    const auto id = BitTorrent::TorrentID::fromString(params()["hash"]);
     const QString origUrl = params()["origUrl"];
     const QString newUrl = params()["newUrl"];
 
-    BitTorrent::Torrent *const torrent = BitTorrent::Session::instance()->findTorrent(hash);
+    BitTorrent::Torrent *const torrent = BitTorrent::Session::instance()->findTorrent(id);
     if (!torrent)
         throw APIError(APIErrorType::NotFound);
 
@@ -722,15 +758,13 @@ void TorrentsController::editTrackerAction()
     bool match = false;
     for (BitTorrent::TrackerEntry &tracker : trackers)
     {
-        const QUrl trackerUrl(tracker.url());
+        const QUrl trackerUrl(tracker.url);
         if (trackerUrl == newTrackerUrl)
             throw APIError(APIErrorType::Conflict, "New tracker URL already exists");
         if (trackerUrl == origTrackerUrl)
         {
             match = true;
-            BitTorrent::TrackerEntry newTracker(newTrackerUrl.toString());
-            newTracker.setTier(tracker.tier());
-            tracker = newTracker;
+            tracker.url = newTrackerUrl.toString();
         }
     }
     if (!match)
@@ -746,8 +780,8 @@ void TorrentsController::removeTrackersAction()
 {
     requireParams({"hash", "urls"});
 
-    const auto hash = BitTorrent::InfoHash::fromString(params()["hash"]);
-    BitTorrent::Torrent *const torrent = BitTorrent::Session::instance()->findTorrent(hash);
+    const auto id = BitTorrent::TorrentID::fromString(params()["hash"]);
+    BitTorrent::Torrent *const torrent = BitTorrent::Session::instance()->findTorrent(id);
     if (!torrent)
         throw APIError(APIErrorType::NotFound);
 
@@ -758,7 +792,7 @@ void TorrentsController::removeTrackersAction()
     remainingTrackers.reserve(trackers.size());
     for (const BitTorrent::TrackerEntry &entry : trackers)
     {
-        if (!urls.contains(entry.url()))
+        if (!urls.contains(entry.url))
             remainingTrackers.push_back(entry);
     }
 
@@ -799,7 +833,7 @@ void TorrentsController::addPeersAction()
             return torrent->connectPeer(peer);
         });
 
-        results[torrent->hash().toString()] = QJsonObject
+        results[torrent->id().toString()] = QJsonObject
         {
             {"added", peersAdded},
             {"failed", (peers.size() - peersAdded)}
@@ -821,15 +855,15 @@ void TorrentsController::resumeAction()
 {
     requireParams({"hashes"});
 
-    const QStringList hashes = params()["hashes"].split('|');
-    applyToTorrents(hashes, [](BitTorrent::Torrent *const torrent) { torrent->resume(); });
+    const QStringList idStrings = params()["hashes"].split('|');
+    applyToTorrents(idStrings, [](BitTorrent::Torrent *const torrent) { torrent->resume(); });
 }
 
 void TorrentsController::filePrioAction()
 {
     requireParams({"hash", "id", "priority"});
 
-    const auto hash = BitTorrent::InfoHash::fromString(params()["hash"]);
+    const auto id = BitTorrent::TorrentID::fromString(params()["hash"]);
     bool ok = false;
     const auto priority = static_cast<BitTorrent::DownloadPriority>(params()["priority"].toInt(&ok));
     if (!ok)
@@ -838,7 +872,7 @@ void TorrentsController::filePrioAction()
     if (!BitTorrent::isValidDownloadPriority(priority))
         throw APIError(APIErrorType::BadParams, tr("Priority is not valid"));
 
-    BitTorrent::Torrent *const torrent = BitTorrent::Session::instance()->findTorrent(hash);
+    BitTorrent::Torrent *const torrent = BitTorrent::Session::instance()->findTorrent(id);
     if (!torrent)
         throw APIError(APIErrorType::NotFound);
     if (!torrent->hasMetadata())
@@ -870,15 +904,15 @@ void TorrentsController::uploadLimitAction()
 {
     requireParams({"hashes"});
 
-    const QStringList hashes {params()["hashes"].split('|')};
+    const QStringList idList {params()["hashes"].split('|')};
     QJsonObject map;
-    for (const QString &hash : hashes)
+    for (const QString &id : idList)
     {
         int limit = -1;
-        const BitTorrent::Torrent *const torrent = BitTorrent::Session::instance()->findTorrent(BitTorrent::InfoHash::fromString(hash));
+        const BitTorrent::Torrent *const torrent = BitTorrent::Session::instance()->findTorrent(BitTorrent::TorrentID::fromString(id));
         if (torrent)
             limit = torrent->uploadLimit();
-        map[hash] = limit;
+        map[id] = limit;
     }
 
     setResult(map);
@@ -888,15 +922,15 @@ void TorrentsController::downloadLimitAction()
 {
     requireParams({"hashes"});
 
-    const QStringList hashes {params()["hashes"].split('|')};
+    const QStringList idList {params()["hashes"].split('|')};
     QJsonObject map;
-    for (const QString &hash : hashes)
+    for (const QString &id : idList)
     {
         int limit = -1;
-        const BitTorrent::Torrent *const torrent = BitTorrent::Session::instance()->findTorrent(BitTorrent::InfoHash::fromString(hash));
+        const BitTorrent::Torrent *const torrent = BitTorrent::Session::instance()->findTorrent(BitTorrent::TorrentID::fromString(id));
         if (torrent)
             limit = torrent->downloadLimit();
-        map[hash] = limit;
+        map[id] = limit;
     }
 
     setResult(map);
@@ -987,7 +1021,7 @@ void TorrentsController::deleteAction()
             ? DeleteTorrentAndFiles : DeleteTorrent;
     applyToTorrents(hashes, [deleteOption](const BitTorrent::Torrent *torrent)
     {
-        BitTorrent::Session::instance()->deleteTorrent(torrent->hash(), deleteOption);
+        BitTorrent::Session::instance()->deleteTorrent(torrent->id(), deleteOption);
     });
 }
 
@@ -999,7 +1033,7 @@ void TorrentsController::increasePrioAction()
         throw APIError(APIErrorType::Conflict, tr("Torrent queueing must be enabled"));
 
     const QStringList hashes {params()["hashes"].split('|')};
-    BitTorrent::Session::instance()->increaseTorrentsQueuePos(toInfoHashes(hashes));
+    BitTorrent::Session::instance()->increaseTorrentsQueuePos(toTorrentIDs(hashes));
 }
 
 void TorrentsController::decreasePrioAction()
@@ -1010,7 +1044,7 @@ void TorrentsController::decreasePrioAction()
         throw APIError(APIErrorType::Conflict, tr("Torrent queueing must be enabled"));
 
     const QStringList hashes {params()["hashes"].split('|')};
-    BitTorrent::Session::instance()->decreaseTorrentsQueuePos(toInfoHashes(hashes));
+    BitTorrent::Session::instance()->decreaseTorrentsQueuePos(toTorrentIDs(hashes));
 }
 
 void TorrentsController::topPrioAction()
@@ -1021,7 +1055,7 @@ void TorrentsController::topPrioAction()
         throw APIError(APIErrorType::Conflict, tr("Torrent queueing must be enabled"));
 
     const QStringList hashes {params()["hashes"].split('|')};
-    BitTorrent::Session::instance()->topTorrentsQueuePos(toInfoHashes(hashes));
+    BitTorrent::Session::instance()->topTorrentsQueuePos(toTorrentIDs(hashes));
 }
 
 void TorrentsController::bottomPrioAction()
@@ -1032,7 +1066,7 @@ void TorrentsController::bottomPrioAction()
         throw APIError(APIErrorType::Conflict, tr("Torrent queueing must be enabled"));
 
     const QStringList hashes {params()["hashes"].split('|')};
-    BitTorrent::Session::instance()->bottomTorrentsQueuePos(toInfoHashes(hashes));
+    BitTorrent::Session::instance()->bottomTorrentsQueuePos(toTorrentIDs(hashes));
 }
 
 void TorrentsController::setLocationAction()
@@ -1065,13 +1099,13 @@ void TorrentsController::renameAction()
 {
     requireParams({"hash", "name"});
 
-    const auto hash = BitTorrent::InfoHash::fromString(params()["hash"]);
+    const auto id = BitTorrent::TorrentID::fromString(params()["hash"]);
     QString name = params()["name"].trimmed();
 
     if (name.isEmpty())
         throw APIError(APIErrorType::Conflict, tr("Incorrect torrent name"));
 
-    BitTorrent::Torrent *const torrent = BitTorrent::Session::instance()->findTorrent(hash);
+    BitTorrent::Torrent *const torrent = BitTorrent::Session::instance()->findTorrent(id);
     if (!torrent)
         throw APIError(APIErrorType::NotFound);
 
@@ -1252,8 +1286,8 @@ void TorrentsController::renameFileAction()
 {
     requireParams({"hash", "oldPath", "newPath"});
 
-    const auto hash = BitTorrent::InfoHash::fromString(params()["hash"]);
-    BitTorrent::Torrent *const torrent = BitTorrent::Session::instance()->findTorrent(hash);
+    const auto id = BitTorrent::TorrentID::fromString(params()["hash"]);
+    BitTorrent::Torrent *const torrent = BitTorrent::Session::instance()->findTorrent(id);
     if (!torrent)
         throw APIError(APIErrorType::NotFound);
 
@@ -1274,8 +1308,8 @@ void TorrentsController::renameFolderAction()
 {
     requireParams({"hash", "oldPath", "newPath"});
 
-    const auto hash = BitTorrent::InfoHash::fromString(params()["hash"]);
-    BitTorrent::Torrent *const torrent = BitTorrent::Session::instance()->findTorrent(hash);
+    const auto id = BitTorrent::TorrentID::fromString(params()["hash"]);
+    BitTorrent::Torrent *const torrent = BitTorrent::Session::instance()->findTorrent(id);
     if (!torrent)
         throw APIError(APIErrorType::NotFound);
 

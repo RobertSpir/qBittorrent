@@ -28,28 +28,41 @@
 
 #pragma once
 
-#include <memory>
-
-#include <libtorrent/fwd.hpp>
-
 #include <QDir>
-#include <QObject>
+#include <QVector>
+
+#include "resumedatastorage.h"
 
 class QByteArray;
+class QThread;
 
-class ResumeDataSavingManager : public QObject
+namespace BitTorrent
 {
-    Q_OBJECT
-    Q_DISABLE_COPY(ResumeDataSavingManager)
+    class TorrentInfo;
 
-public:
-    explicit ResumeDataSavingManager(const QString &resumeFolderPath);
+    class BencodeResumeDataStorage final : public ResumeDataStorage
+    {
+        Q_OBJECT
+        Q_DISABLE_COPY(BencodeResumeDataStorage)
 
-public slots:
-    void save(const QString &filename, const QByteArray &data) const;
-    void save(const QString &filename, const std::shared_ptr<lt::entry> &data) const;
-    void remove(const QString &filename) const;
+    public:
+        explicit BencodeResumeDataStorage(QObject *parent = nullptr);
+        ~BencodeResumeDataStorage() override;
 
-private:
-    const QDir m_resumeDataDir;
-};
+        QVector<TorrentID> registeredTorrents() const override;
+        std::optional<LoadTorrentParams> load(const TorrentID &id) const override;
+        void store(const TorrentID &id, const LoadTorrentParams &resumeData) const override;
+        void remove(const TorrentID &id) const override;
+        void storeQueue(const QVector<TorrentID> &queue) const override;
+
+    private:
+        std::optional<LoadTorrentParams> loadTorrentResumeData(const QByteArray &data, const TorrentInfo &metadata) const;
+
+        const QDir m_resumeDataDir;
+        QVector<TorrentID> m_registeredTorrents;
+        QThread *m_ioThread = nullptr;
+
+        class Worker;
+        Worker *m_asyncWorker = nullptr;
+    };
+}

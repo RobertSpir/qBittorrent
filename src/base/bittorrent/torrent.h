@@ -44,9 +44,10 @@ namespace BitTorrent
     enum class DownloadPriority;
     class InfoHash;
     class PeerInfo;
+    class TorrentID;
     class TorrentInfo;
-    class TrackerEntry;
     struct PeerAddress;
+    struct TrackerEntry;
 
     enum class TorrentOperatingMode
     {
@@ -107,7 +108,7 @@ namespace BitTorrent
 
         virtual ~Torrent() = default;
 
-        virtual InfoHash hash() const = 0;
+        virtual InfoHash infoHash() const = 0;
         virtual QString name() const = 0;
         virtual QDateTime creationDate() const = 0;
         virtual QString creator() const = 0;
@@ -292,6 +293,7 @@ namespace BitTorrent
 
         virtual QString createMagnetURI() const = 0;
 
+        TorrentID id() const;
         bool isResumed() const;
         qlonglong remainingSize() const;
 

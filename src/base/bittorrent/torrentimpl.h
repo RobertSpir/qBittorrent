@@ -49,31 +49,20 @@
 #include "torrent.h"
 #include "torrentinfo.h"
 
+#if (LIBTORRENT_VERSION_NUM == 20003)
+// file_prio_alert is missing to be forward declared in "libtorrent/fwd.hpp"
+namespace libtorrent
+{
+    TORRENT_VERSION_NAMESPACE_3
+    struct file_prio_alert;
+    TORRENT_VERSION_NAMESPACE_3_END
+}
+#endif
+
 namespace BitTorrent
 {
     class Session;
-    struct AddTorrentParams;
-
-    struct LoadTorrentParams
-    {
-        lt::add_torrent_params ltAddTorrentParams {};
-
-        QString name;
-        QString category;
-        QSet<QString> tags;
-        QString savePath;
-        TorrentContentLayout contentLayout = TorrentContentLayout::Original;
-        bool firstLastPiecePriority = false;
-        bool hasSeedStatus = false;
-        bool forced = false;
-        bool paused = false;
-
-
-        qreal ratioLimit = Torrent::USE_GLOBAL_RATIO;
-        int seedingTimeLimit = Torrent::USE_GLOBAL_SEEDING_TIME;
-
-        bool restored = false;  // is existing torrent job?
-    };
+    struct LoadTorrentParams;
 
     enum class MoveStorageMode
     {
@@ -99,7 +88,7 @@ namespace BitTorrent
 
         bool isValid() const;
 
-        InfoHash hash() const override;
+        InfoHash infoHash() const override;
         QString name() const override;
         QDateTime creationDate() const override;
         QString creator() const override;
@@ -265,6 +254,9 @@ namespace BitTorrent
 
         void handleFastResumeRejectedAlert(const lt::fastresume_rejected_alert *p);
         void handleFileCompletedAlert(const lt::file_completed_alert *p);
+#if (LIBTORRENT_VERSION_NUM >= 20003)
+        void handleFilePrioAlert(const lt::file_prio_alert *p);
+#endif
         void handleFileRenamedAlert(const lt::file_renamed_alert *p);
         void handleFileRenameFailedAlert(const lt::file_rename_failed_alert *p);
         void handleMetadataReceivedAlert(const lt::metadata_received_alert *p);
@@ -290,6 +282,7 @@ namespace BitTorrent
         void manageIncompleteFiles();
         void applyFirstLastPiecePriority(bool enabled, const QVector<DownloadPriority> &updatedFilePrio = {});
 
+        void prepareResumeData(const lt::add_torrent_params &params);
         void endReceivedMetadataHandling(const QString &savePath, const QStringList &fileNames);
         void reload();
 
@@ -301,7 +294,7 @@ namespace BitTorrent
         TorrentInfo m_torrentInfo;
         SpeedMonitor m_speedMonitor;
 
-        InfoHash m_hash;
+        InfoHash m_infoHash;
 
         // m_moveFinishedTriggers is activated only when the following conditions are met:
         // all file rename jobs complete, all file move jobs complete
