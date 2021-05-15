@@ -325,13 +325,6 @@ QString TransferListModel::displayValue(const BitTorrent::Torrent *torrent, cons
                      , Utils::Misc::userFriendlyDuration(seedingTime));
     };
 
-    const auto tagsString = [](const QSet<QString> &tags) -> QString
-    {
-        QStringList tagsList = tags.values();
-        tagsList.sort();
-        return tagsList.join(", ");
-    };
-
     const auto progressString = [](const qreal progress) -> QString
     {
         return (progress >= 1)
@@ -375,7 +368,7 @@ QString TransferListModel::displayValue(const BitTorrent::Torrent *torrent, cons
     case TR_CATEGORY:
         return torrent->category();
     case TR_TAGS:
-        return tagsString(torrent->tags());
+        return torrent->tags().join(QLatin1String(", "));
     case TR_ADD_DATE:
         return QLocale().toString(torrent->addedTime().toLocalTime(), QLocale::ShortFormat);
     case TR_SEED_DATE:
@@ -405,7 +398,7 @@ QString TransferListModel::displayValue(const BitTorrent::Torrent *torrent, cons
     case TR_SEEN_COMPLETE_DATE:
         return QLocale().toString(torrent->lastSeenComplete().toLocalTime(), QLocale::ShortFormat);
     case TR_LAST_ACTIVITY:
-        return lastActivityString((torrent->isPaused() || torrent->isChecking()) ? -1 : torrent->timeSinceActivity());
+        return lastActivityString(torrent->timeSinceActivity());
     case TR_AVAILABILITY:
         return availabilityString(torrent->distributedCopies());
     case TR_TOTAL_SIZE:
@@ -444,7 +437,7 @@ QVariant TransferListModel::internalValue(const BitTorrent::Torrent *torrent, co
     case TR_CATEGORY:
         return torrent->category();
     case TR_TAGS:
-        return QStringList {torrent->tags().values()};
+        return QVariant::fromValue(torrent->tags());
     case TR_ADD_DATE:
         return torrent->addedTime();
     case TR_SEED_DATE:
@@ -476,7 +469,7 @@ QVariant TransferListModel::internalValue(const BitTorrent::Torrent *torrent, co
     case TR_SEEN_COMPLETE_DATE:
         return torrent->lastSeenComplete();
     case TR_LAST_ACTIVITY:
-        return (torrent->isPaused() || torrent->isChecking()) ? -1 : torrent->timeSinceActivity();
+        return torrent->timeSinceActivity();
     case TR_AVAILABILITY:
         return torrent->distributedCopies();
     case TR_TOTAL_SIZE:
