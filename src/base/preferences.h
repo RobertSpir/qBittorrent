@@ -134,8 +134,6 @@ public:
     // Downloads
     QString lastLocationPath() const;
     void setLastLocationPath(const QString &path);
-    QVariantHash getScanDirs() const;
-    void setScanDirs(const QVariantHash &dirs);
     QString getScanDirsLastPath() const;
     void setScanDirsLastPath(const QString &path);
     bool isMailNotificationEnabled() const;
@@ -228,6 +226,12 @@ public:
     void setWebUICustomHTTPHeadersEnabled(bool enabled);
     QString getWebUICustomHTTPHeaders() const;
     void setWebUICustomHTTPHeaders(const QString &headers);
+
+    // Reverse proxy
+    bool isWebUIReverseProxySupportEnabled() const;
+    void setWebUIReverseProxySupportEnabled(bool enabled);
+    QString getWebUITrustedReverseProxiesList() const;
+    void setWebUITrustedReverseProxiesList(const QString &addr);
 
     // Dynamic DNS
     bool isDynDNSEnabled() const;

@@ -386,7 +386,7 @@ void BitTorrent::DBResumeDataStorage::createDB() const
         if (!db.commit())
             throw RuntimeError(db.lastError().text());
     }
-    catch (const RuntimeError &err)
+    catch (const RuntimeError &)
     {
         db.rollback();
         throw;
@@ -459,9 +459,18 @@ void BitTorrent::DBResumeDataStorage::Worker::store(const TorrentID &id, const L
     const std::shared_ptr<lt::torrent_info> torrentInfo = std::move(p.ti);
     if (torrentInfo)
     {
-        const lt::create_torrent torrentCreator = lt::create_torrent(*torrentInfo);
-        const lt::entry metadata = torrentCreator.generate();
-        lt::bencode(std::back_inserter(bencodedMetadata), metadata);
+        try
+        {
+            const auto torrentCreator = lt::create_torrent(*torrentInfo);
+            const lt::entry metadata = torrentCreator.generate();
+            lt::bencode(std::back_inserter(bencodedMetadata), metadata);
+        }
+        catch (const std::exception &err)
+        {
+            LogMsg(tr("Couldn't save torrent metadata. Error: %1.")
+                   .arg(QString::fromLocal8Bit(err.what())), Log::CRITICAL);
+            return;
+        }
 
         columns.append(DB_COLUMN_METADATA);
     }
@@ -563,7 +572,7 @@ void BitTorrent::DBResumeDataStorage::Worker::storeQueue(const QVector<TorrentID
             if (!db.commit())
                 throw RuntimeError(db.lastError().text());
         }
-        catch (const RuntimeError &err)
+        catch (const RuntimeError &)
         {
             db.rollback();
             throw;
