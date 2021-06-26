@@ -101,6 +101,9 @@ public slots:
 
 signals:
     void currentTorrentChanged(BitTorrent::Torrent *const torrent);
+#ifdef Q_OS_WIN
+    void updateTaskbar(BitTorrent::Torrent* const torrent);
+#endif
 
 private slots:
     void torrentDoubleClicked();
@@ -114,12 +117,6 @@ private slots:
     void saveSettings();
 #ifdef Q_OS_WIN
     void taskbarChanged();
-#endif
-
-signals:
-    void currentTorrentChanged(BitTorrent::Torrent *const torrent);
-#ifdef Q_OS_WIN
-    void updateTaskbar(BitTorrent::Torrent *const torrent);
 #endif
 
 private:
