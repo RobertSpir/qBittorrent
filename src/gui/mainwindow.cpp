@@ -2337,4 +2337,4 @@ void MainWindow::updateTaskbar(BitTorrent::Torrent* torrent)
         m_resume->setVisible(false);
     }
 }
-#endif
+#endif // Q_OS_WIN

@@ -212,7 +212,7 @@ TransferListWidget::TransferListWidget(QWidget *parent, MainWindow *mainWindow)
     connect(header(), &QHeaderView::sectionResized, this, &TransferListWidget::saveSettings);
     connect(header(), &QHeaderView::sortIndicatorChanged, this, &TransferListWidget::saveSettings);
 #ifdef Q_OS_WIN
-    connect(m_listModel, SIGNAL(dataChanged(const QModelIndex, const QModelIndex)), this, SLOT(taskbarChanged()));
+    connect(m_listModel, &TransferListModel::dataChanged, this, &TransferListWidget::taskbarChanged);
 #endif
 
     const auto *editHotkey = new QShortcut(Qt::Key_F2, this, nullptr, nullptr, Qt::WidgetShortcut);
