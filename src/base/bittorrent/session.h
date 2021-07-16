@@ -82,12 +82,6 @@ enum DeleteOption
     DeleteTorrentAndFiles
 };
 
-enum TorrentExportFolder
-{
-    Regular,
-    Finished
-};
-
 namespace Net
 {
     struct DownloadResult;
@@ -211,7 +205,7 @@ namespace BitTorrent
     class Session : public QObject
     {
         Q_OBJECT
-        Q_DISABLE_COPY(Session)
+        Q_DISABLE_COPY_MOVE(Session)
 
     public:
         static void initInstance();
@@ -613,7 +607,7 @@ namespace BitTorrent
         bool addTorrent_impl(const std::variant<MagnetUri, TorrentInfo> &source, const AddTorrentParams &addTorrentParams);
 
         void updateSeedingLimitTimer();
-        void exportTorrentFile(const Torrent *torrent, TorrentExportFolder folder = TorrentExportFolder::Regular);
+        void exportTorrentFile(const TorrentInfo &torrentInfo, const QString &folderPath, const QString &baseName);
 
         void handleAlert(const lt::alert *a);
         void dispatchTorrentAlert(const lt::alert *a);

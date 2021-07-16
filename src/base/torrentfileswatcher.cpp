@@ -192,7 +192,7 @@ namespace
 class TorrentFilesWatcher::Worker final : public QObject
 {
     Q_OBJECT
-    Q_DISABLE_COPY(Worker)
+    Q_DISABLE_COPY_MOVE(Worker)
 
 public:
     Worker();
@@ -268,11 +268,10 @@ QString TorrentFilesWatcher::makeCleanPath(const QString &path)
     if (path.isEmpty())
         throw InvalidArgument(tr("Watched folder path cannot be empty."));
 
-    const QDir dir {path};
-    if (dir.isRelative())
+    if (QDir::isRelativePath(path))
         throw InvalidArgument(tr("Watched folder path cannot be relative."));
 
-    return dir.canonicalPath();
+    return QDir::cleanPath(path);
 }
 
 void TorrentFilesWatcher::load()
@@ -295,7 +294,7 @@ void TorrentFilesWatcher::load()
     const QJsonDocument jsonDoc = QJsonDocument::fromJson(confFile.readAll(), &jsonError);
     if (jsonError.error != QJsonParseError::NoError)
     {
-        LogMsg(tr("Couldn't parse  Watched Folders configuration from %1. Error: %2")
+        LogMsg(tr("Couldn't parse Watched Folders configuration from %1. Error: %2")
             .arg(confFile.fileName(), jsonError.errorString()), Log::WARNING);
         return;
     }
@@ -601,13 +600,10 @@ void TorrentFilesWatcher::Worker::addWatchedFolder(const QString &path, const To
 {
 #if !defined Q_OS_HAIKU
     // Check if the path points to a network file system or not
-    if (Utils::Fs::isNetworkFileSystem(path))
-    {
-        m_watchedByTimeoutFolders.insert(path);
-    }
-    else
-#endif
+    if (Utils::Fs::isNetworkFileSystem(path) || options.recursive)
+#else
     if (options.recursive)
+#endif
     {
         m_watchedByTimeoutFolders.insert(path);
         if (!m_watchTimer->isActive())

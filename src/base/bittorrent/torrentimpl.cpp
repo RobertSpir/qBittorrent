@@ -84,7 +84,7 @@ namespace
                        , std::back_inserter(out), [](const DownloadPriority priority)
         {
             return static_cast<lt::download_priority_t>(
-                        static_cast<LTUnderlyingType<lt::download_priority_t>>(priority));
+                        static_cast<lt::download_priority_t::underlying_type>(priority));
         });
         return out;
     }
@@ -112,7 +112,7 @@ namespace
         QString firstTrackerMessage;
         QString firstErrorMessage;
 #if (LIBTORRENT_VERSION_NUM >= 20000)
-        const size_t numEndpoints = nativeEntry.endpoints.size() * ((hashes.has_v1() && hashes.has_v2()) ? 2 : 1);
+        const auto numEndpoints = static_cast<qsizetype>(nativeEntry.endpoints.size() * ((hashes.has_v1() && hashes.has_v2()) ? 2 : 1));
         trackerEntry.endpoints.reserve(static_cast<decltype(trackerEntry.endpoints)::size_type>(numEndpoints));
         for (const lt::announce_endpoint &endpoint : nativeEntry.endpoints)
         {
@@ -167,8 +167,8 @@ namespace
             }
         }
 #else
-        const int numEndpoints = nativeEntry.endpoints.size();
-        trackerEntry.endpoints.reserve(numEndpoints);
+        const auto numEndpoints = static_cast<qsizetype>(nativeEntry.endpoints.size());
+        trackerEntry.endpoints.reserve(static_cast<decltype(trackerEntry.endpoints)::size_type>(numEndpoints));
         for (const lt::announce_endpoint &endpoint : nativeEntry.endpoints)
         {
             TrackerEntry::EndpointStats trackerEndpoint;
@@ -797,9 +797,10 @@ QVector<DownloadPriority> TorrentImpl::filePriorities() const
     const std::vector<lt::download_priority_t> fp = m_nativeHandle.get_file_priorities();
 
     QVector<DownloadPriority> ret;
-    std::transform(fp.cbegin(), fp.cend(), std::back_inserter(ret), [](lt::download_priority_t priority)
+    ret.reserve(static_cast<decltype(ret)::size_type>(fp.size()));
+    std::transform(fp.cbegin(), fp.cend(), std::back_inserter(ret), [](const lt::download_priority_t priority)
     {
-        return static_cast<DownloadPriority>(static_cast<LTUnderlyingType<lt::download_priority_t>>(priority));
+        return static_cast<DownloadPriority>(toLTUnderlyingType(priority));
     });
     return ret;
 }
@@ -1265,7 +1266,7 @@ QBitArray TorrentImpl::downloadingPieces() const
     m_nativeHandle.get_download_queue(queue);
 
     for (const lt::partial_piece_info &info : queue)
-        result.setBit(static_cast<LTUnderlyingType<lt::piece_index_t>>(info.piece_index));
+        result.setBit(toLTUnderlyingType(info.piece_index));
 
     return result;
 }
@@ -1915,7 +1916,7 @@ void TorrentImpl::handleFileRenamedAlert(const lt::file_renamed_alert *p)
 void TorrentImpl::handleFileRenameFailedAlert(const lt::file_rename_failed_alert *p)
 {
     LogMsg(tr("File rename failed. Torrent: \"%1\", file: \"%2\", reason: \"%3\"")
-        .arg(name(), filePath(static_cast<LTUnderlyingType<lt::file_index_t>>(p->index))
+        .arg(name(), filePath(toLTUnderlyingType(p->index))
              , QString::fromLocal8Bit(p->error.message().c_str())), Log::WARNING);
 
     m_oldPath[p->index].removeFirst();
@@ -1934,13 +1935,13 @@ void TorrentImpl::handleFileCompletedAlert(const lt::file_completed_alert *p)
     qDebug("A file completed download in torrent \"%s\"", qUtf8Printable(name()));
     if (m_session->isAppendExtensionEnabled())
     {
-        QString name = filePath(static_cast<LTUnderlyingType<lt::file_index_t>>(p->index));
+        QString name = filePath(toLTUnderlyingType(p->index));
         if (name.endsWith(QB_EXT))
         {
             const QString oldName = name;
             name.chop(QB_EXT.size());
             qDebug("Renaming %s to %s", qUtf8Printable(oldName), qUtf8Printable(name));
-            renameFile(static_cast<LTUnderlyingType<lt::file_index_t>>(p->index), name);
+            renameFile(toLTUnderlyingType(p->index), name);
         }
     }
 }

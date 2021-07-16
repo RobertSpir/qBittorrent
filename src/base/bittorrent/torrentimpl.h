@@ -51,16 +51,6 @@
 #include "torrent.h"
 #include "torrentinfo.h"
 
-#if (LIBTORRENT_VERSION_NUM == 20003)
-// file_prio_alert is missing to be forward declared in "libtorrent/fwd.hpp"
-namespace libtorrent
-{
-    TORRENT_VERSION_NAMESPACE_3
-    struct file_prio_alert;
-    TORRENT_VERSION_NAMESPACE_3_END
-}
-#endif
-
 namespace BitTorrent
 {
     class Session;
@@ -86,7 +76,7 @@ namespace BitTorrent
 
     class TorrentImpl final : public QObject, public Torrent
     {
-        Q_DISABLE_COPY(TorrentImpl)
+        Q_DISABLE_COPY_MOVE(TorrentImpl)
         Q_DECLARE_TR_FUNCTIONS(BitTorrent::TorrentImpl)
 
     public:
